@@ -19,6 +19,7 @@ type ServiceGroup struct {
 	SysParamsService
 	SysVersionService
 	AlbumService
+	DrawingService
 	AutoCodePlugin   autoCodePlugin
 	AutoCodePackage  autoCodePackage
 	AutoCodeHistory  autoCodeHistory

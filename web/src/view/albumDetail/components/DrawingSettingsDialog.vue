@@ -191,6 +191,7 @@
 <script setup>
 import { ref, reactive, watch } from 'vue'
 import { ElMessage } from 'element-plus'
+import { getBaseUrl } from '@/utils/format'
 
 defineOptions({
   name: 'DrawingSettingsDialog'
@@ -395,7 +396,10 @@ watch([() => props.visible, () => props.drawing], ([visible, drawing]) => {
     formData.name = drawing.name || ''
     formData.beanQuantity = drawing.beanQuantity || null
     formData.posterImage = drawing.posterImage || ''
-    formData.drawings = drawing.drawings || []
+    // 处理drawingURLs，确保包含baseUrl
+    formData.drawings = (drawing.drawingURLs || []).map(url => {
+      return url
+    })
     formData.allowedMembers = drawing.allowedMembers || []
   } else if (visible) {
     // 重置表单

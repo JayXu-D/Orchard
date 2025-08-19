@@ -59,6 +59,7 @@ func RegisterTables() {
 		system.SysVersion{},
 		system.SysAlbum{},
 		system.SysAlbumAdmin{},
+		system.SysDrawing{},
 
 		example.ExaFile{},
 		example.ExaCustomer{},

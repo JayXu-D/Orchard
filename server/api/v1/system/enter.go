@@ -24,6 +24,7 @@ type ApiGroup struct {
 	SysParamsApi
 	SysVersionApi
 	AlbumApi
+	DrawingApi
 }
 
 var (
@@ -48,4 +49,5 @@ var (
 	autoCodeTemplateService = service.ServiceGroupApp.SystemServiceGroup.AutoCodeTemplate
 	sysVersionService       = service.ServiceGroupApp.SystemServiceGroup.SysVersionService
 	albumService            = service.ServiceGroupApp.SystemServiceGroup.AlbumService
+	drawingService          = service.ServiceGroupApp.SystemServiceGroup.DrawingService
 )

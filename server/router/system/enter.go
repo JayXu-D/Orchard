@@ -45,4 +45,5 @@ var (
 	exportTemplateApi   = api.ApiGroupApp.SystemApiGroup.SysExportTemplateApi
 	sysVersionApi       = api.ApiGroupApp.SystemApiGroup.SysVersionApi
 	albumApi            = api.ApiGroupApp.SystemApiGroup.AlbumApi
+	drawingApi          = api.ApiGroupApp.SystemApiGroup.DrawingApi
 )

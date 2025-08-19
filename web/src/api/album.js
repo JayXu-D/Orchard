@@ -55,8 +55,8 @@ export const deleteAlbumApi = (data) => {
 // 获取相册详情
 export const getAlbumDetail = (data) => {
   return service({
-    url: '/album/detail',
-    method: 'get',
+    url: '/album/get',
+    method: 'post',
     data
   })
 }
@@ -65,7 +65,7 @@ export const getAlbumDetail = (data) => {
 export const getDrawingList = (data) => {
   return service({
     url: '/drawing/list',
-    method: 'get',
+    method: 'post',
     data
   })
 }
@@ -75,6 +75,42 @@ export const downloadDrawing = (data) => {
   return service({
     url: '/drawing/download',
     method: 'get',
+    data
+  })
+}
+
+// 创建图纸
+export const createDrawing = (data) => {
+  return service({
+    url: '/drawing/create',
+    method: 'post',
+    data
+  })
+}
+
+// 获取图纸详情
+export const getDrawingDetail = (data) => {
+  return service({
+    url: '/drawing/get',
+    method: 'post',
+    data
+  })
+}
+
+// 更新图纸
+export const updateDrawing = (data) => {
+  return service({
+    url: '/drawing/update',
+    method: 'put',
+    data
+  })
+}
+
+// 删除图纸
+export const deleteDrawing = (data) => {
+  return service({
+    url: '/drawing/delete',
+    method: 'delete',
     data
   })
 }
