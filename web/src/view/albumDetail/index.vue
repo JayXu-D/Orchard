@@ -138,7 +138,7 @@ import UploadDrawingDialog from './components/UploadDrawingDialog.vue'
 import AddPermissionDialog from './components/AddPermissionDialog.vue'
 import DrawingSettingsDialog from './components/DrawingSettingsDialog.vue'
 import ImagePreviewDialog from './components/ImagePreviewDialog.vue'
-import { getAlbumDetail, getDrawingList, downloadDrawing as downloadDrawingApi, createDrawing, updateDrawing } from '@/api/album'
+import { getAlbumDetail, getDrawingList, downloadDrawing as downloadDrawingApi, batchDownloadDrawings, createDrawing, updateDrawing } from '@/api/album'
 import { getBaseUrl } from '@/utils/format'
 import { uploadFile } from '@/api/fileUploadAndDownload'
 
@@ -248,28 +248,112 @@ const batchDownload = async () => {
   if (selectedDrawings.value.length === 0) return
 
   try {
-    // TODO: 实现批量下载逻辑
     console.log('批量下载:', selectedDrawings.value)
     console.log('相册ID:', albumId.value)
+    
+    // 调用批量下载接口
+    const result = await batchDownloadDrawings({
+      drawingIds: selectedDrawings.value,
+      albumId: Number(albumId.value),
+      addWatermark: true, // 默认添加水印
+      watermarkText: '批量下载图纸'
+    })
+    
+    if (result.code === 0) {
+      ElMessage.success(`成功下载 ${selectedDrawings.value.length} 个图纸`)
+      
+      // 标记所有选中的图纸为已下载
+      selectedDrawings.value.forEach(drawingId => {
+        const drawing = drawings.value.find(d => d.id === drawingId)
+        if (drawing) {
+          drawing.downloaded = true
+        }
+      })
+      
+      // 清空选择
+      selectedDrawings.value = []
+      
+      // 如果返回了文件路径列表，触发浏览器下载
+      if (result.data && result.data.filePaths && result.data.filePaths.length > 0) {
+        // 为每个文件创建下载链接
+        result.data.filePaths.forEach((filePath, index) => {
+          // 使用完整的API路径进行下载
+          const downloadUrl = filePath.startsWith('/') ? filePath : `/api/v1/drawing/${filePath}`
+          
+          // 创建下载链接
+          const link = document.createElement('a')
+          link.href = downloadUrl
+          link.download = filePath.split('/').pop() // 获取文件名
+          link.style.display = 'none'
+          document.body.appendChild(link)
+          
+          // 延迟下载，避免浏览器阻止多个下载
+          setTimeout(() => {
+            link.click()
+            document.body.removeChild(link)
+          }, index * 100)
+        })
+        
+        ElMessage.success(`批量下载成功，共 ${result.data.filePaths.length} 个文件`)
+      }
+    } else {
+      ElMessage.error('批量下载失败: ' + (result.msg || '未知错误'))
+    }
   } catch (error) {
     console.error('批量下载失败:', error)
+    ElMessage.error('批量下载失败: ' + error.message)
   }
 }
 
 const downloadDrawing = async (drawing) => {
   if (!drawing.canDownload) return
-
+  
   try {
-    // TODO: 实现单个图纸下载逻辑
     console.log('下载图纸:', drawing.id)
     console.log('相册ID:', albumId.value)
-    const result = await downloadDrawingApi(drawing.id)
+    
+    // 调用下载接口，下载该图纸下的所有图纸文件
+    const result = await downloadDrawingApi({
+      drawingId: drawing.id,
+      albumId: Number(albumId.value),
+      addWatermark: true, // 默认添加水印
+      watermarkText: `创建者: ${drawing.creator?.username || '未知'}`
+    })
+    
     if (result.code === 0) {
       // 标记为已下载
       drawing.downloaded = true
+      ElMessage.success('图纸下载成功')
+      
+      // 如果返回了文件路径列表，触发浏览器下载
+      if (result.data && result.data.filePaths && result.data.filePaths.length > 0) {
+        // 为每个文件创建下载链接
+        result.data.filePaths.forEach((filePath, index) => {
+          // 使用完整的API路径进行下载
+          const downloadUrl = filePath.startsWith('/') ? filePath : `/api/v1/drawing/${filePath}`
+          
+          // 创建下载链接
+          const link = document.createElement('a')
+          link.href = downloadUrl
+          link.download = filePath.split('/').pop() // 获取文件名
+          link.style.display = 'none'
+          document.body.appendChild(link)
+          
+          // 延迟下载，避免浏览器阻止多个下载
+          setTimeout(() => {
+            link.click()
+            document.body.removeChild(link)
+          }, index * 100)
+        })
+        
+        ElMessage.success(`图纸下载成功，共 ${result.data.filePaths.length} 个文件`)
+      }
+    } else {
+      ElMessage.error('图纸下载失败: ' + (result.msg || '未知错误'))
     }
   } catch (error) {
     console.error('下载失败:', error)
+    ElMessage.error('下载失败: ' + error.message)
   }
 }
 

@@ -46,3 +46,19 @@ type GetDrawingList struct {
 	Keyword   string `json:"keyword"`                    // 搜索关键词
 	CreatorID uint   `json:"creatorId"`                  // 创建者ID
 }
+
+// DownloadDrawing 下载图纸请求
+type DownloadDrawing struct {
+	DrawingID     uint   `json:"drawingId" binding:"required"` // 图纸ID
+	AlbumID       uint   `json:"albumId" binding:"required"`   // 相册ID
+	AddWatermark  bool   `json:"addWatermark"`                 // 是否添加水印
+	WatermarkText string `json:"watermarkText"`                // 水印文字
+}
+
+// BatchDownloadDrawings 批量下载图纸请求
+type BatchDownloadDrawings struct {
+	DrawingIDs    []uint `json:"drawingIds" binding:"required"` // 图纸ID列表
+	AlbumID       uint   `json:"albumId" binding:"required"`    // 相册ID
+	AddWatermark  bool   `json:"addWatermark"`                  // 是否添加水印
+	WatermarkText string `json:"watermarkText"`                 // 水印文字
+}

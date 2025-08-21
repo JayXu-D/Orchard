@@ -74,7 +74,16 @@ export const getDrawingList = (data) => {
 export const downloadDrawing = (data) => {
   return service({
     url: '/drawing/download',
-    method: 'get',
+    method: 'post',
+    data
+  })
+}
+
+// 批量下载图纸
+export const batchDownloadDrawings = (data) => {
+  return service({
+    url: '/drawing/batchDownload',
+    method: 'post',
     data
   })
 }

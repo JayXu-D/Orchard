@@ -8,7 +8,7 @@ import (
 type AlbumRouter struct{}
 
 // InitAlbumRouter 初始化相册路由
-func (s *AlbumRouter) InitAlbumRouter(Router *gin.RouterGroup) {
+func (s *AlbumRouter) InitAlbumRouter(Router *gin.RouterGroup, PublicRouter *gin.RouterGroup) {
 	albumRouter := Router.Group("album").Use(middleware.OperationRecord())
 	albumRouterWithoutRecord := Router.Group("album")
 	{
@@ -32,7 +32,18 @@ func (s *AlbumRouter) InitAlbumRouter(Router *gin.RouterGroup) {
 		drawingRouter.PUT("update", drawingApi.UpdateDrawing)    // 更新图纸
 	}
 	{
-		drawingRouterWithoutRecord.POST("get", drawingApi.GetDrawingByID)  // 根据ID获取图纸
-		drawingRouterWithoutRecord.POST("list", drawingApi.GetDrawingList) // 获取图纸列表
+		drawingRouterWithoutRecord.POST("get", drawingApi.GetDrawingByID)                  // 根据ID获取图纸
+		drawingRouterWithoutRecord.POST("list", drawingApi.GetDrawingList)                 // 获取图纸列表
+		drawingRouterWithoutRecord.POST("download", drawingApi.DownloadDrawing)            // 下载图纸
+		drawingRouterWithoutRecord.POST("batchDownload", drawingApi.BatchDownloadDrawings) // 批量下载图纸
+		drawingRouterWithoutRecord.GET("watermark/:filename", drawingApi.GetWatermarkFile) // 获取水印文件
+		drawingRouterWithoutRecord.GET("file/:filename", drawingApi.GetDrawingFile)        // 获取图纸文件
+	}
+
+	// 在公共路由组中添加v1路径的文件访问路由，避免权限认证问题
+	v1DrawingRouter := PublicRouter.Group("v1").Group("drawing")
+	{
+		v1DrawingRouter.GET("watermark/:filename", drawingApi.GetWatermarkFile) // 获取水印文件
+		v1DrawingRouter.GET("file/:filename", drawingApi.GetDrawingFile)        // 获取图纸文件
 	}
 }

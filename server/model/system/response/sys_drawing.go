@@ -37,6 +37,14 @@ type DrawingListResponse struct {
 	Total    int64             `json:"total"`    // 总数
 }
 
+// DownloadResponse 下载响应结构体
+type DownloadResponse struct {
+	DownloadURL string   `json:"downloadUrl"` // 下载链接
+	FileName    string   `json:"fileName"`    // 文件名
+	FileSize    int64    `json:"fileSize"`    // 文件大小
+	FilePaths   []string `json:"filePaths"`   // 文件路径列表（用于批量下载）
+}
+
 // ToDrawingResponse 转换为图纸响应结构体
 func ToDrawingResponse(drawing *system.SysDrawing) DrawingResponse {
 	var drawingURLs []string
