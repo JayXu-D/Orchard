@@ -58,12 +58,25 @@
 
         <!-- 图纸表格 -->
         <div class="bg-white rounded-lg shadow overflow-hidden">
-          <table class="min-w-full divide-y divide-gray-200">
+          <!-- 没有数据时的提示 -->
+          <div v-if="filteredDrawings.length === 0" class="p-8 text-center text-gray-500">
+            <div class="text-lg mb-2">暂无图纸数据</div>
+            <div class="text-sm">请检查筛选条件或联系管理员添加图纸</div>
+          </div>
+          
+          <!-- 有数据时显示表格 -->
+          <table v-else class="min-w-full divide-y divide-gray-200">
             <thead class="bg-gray-50">
               <tr>
                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  <input type="checkbox" :checked="isAllSelected" @change="toggleSelectAll"
-                    class="rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
+                  <div class="flex items-center space-x-2">
+                    <input type="checkbox" 
+                      :checked="isAllSelected" 
+                      @change="toggleSelectAll"
+                      class="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 focus:ring-2 cursor-pointer appearance-auto" 
+                      style="-webkit-appearance: auto; -moz-appearance: auto; appearance: auto;" />
+                    <span class="text-xs text-gray-500">全选</span>
+                  </div>
                 </th>
                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">序号</th>
                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">图纸名称</th>
@@ -77,9 +90,11 @@
             <tbody class="bg-white divide-y divide-gray-200">
               <tr v-for="drawing in filteredDrawings" :key="drawing.id" class="hover:bg-gray-50">
                 <td class="px-6 py-4 whitespace-nowrap">
-                  <input type="checkbox" :checked="selectedDrawings.includes(drawing.id)"
+                  <input type="checkbox" 
+                    :checked="selectedDrawings.includes(drawing.id)"
                     @change="toggleDrawingSelection(drawing.id)"
-                    class="rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
+                    class="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 focus:ring-2 cursor-pointer appearance-auto" 
+                    style="-webkit-appearance: auto; -moz-appearance: auto; appearance: auto;" />
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ drawing.serialNumber }}</td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ drawing.name }}</td>
@@ -604,6 +619,7 @@ const fetchDrawings = async () => {
   }
 
   console.log('获取图纸列表，baseUrl:', getBaseUrl())
+  console.log('相册ID:', albumId.value)
   try {
     const res = await getDrawingList({
       albumId: Number(albumId.value),
@@ -624,11 +640,14 @@ const fetchDrawings = async () => {
         canEdit: d.creatorUUID === userStore.userInfo.uuid, // 只有上传者可以编辑
         downloaded: false // TODO: 根据实际下载状态判断
       }))
+      console.log('处理后的图纸数据:', drawings.value)
     } else {
       // 如果API调用失败，设置空数组
       drawings.value = []
+      console.warn('API调用失败，设置空数组')
     }
     console.log('图纸列表:', drawings.value)
+    console.log('图纸数量:', drawings.value.length)
   } catch (error) {
     console.error('获取图纸列表失败:', error)
     drawings.value = []
@@ -657,10 +676,63 @@ onMounted(() => {
   if (route.params.id) {
     albumId.value = route.params.id
     console.log('组件挂载，相册ID:', route.params.id)
+    console.log('路由参数:', route.params)
+    console.log('用户信息:', userStore.userInfo)
     fetchAlbumDetail()
     fetchDrawings()
   } else {
     console.warn('组件挂载时没有相册ID')
   }
+  
+  // 添加一些测试数据用于调试
+  console.log('组件挂载完成，当前状态:')
+  console.log('- albumId:', albumId.value)
+  console.log('- drawings:', drawings.value)
+  console.log('- selectedDrawings:', selectedDrawings.value)
+  console.log('- canManage:', canManage.value)
 })
 </script>
+
+<style scoped>
+/* 确保checkbox在所有浏览器中可见 */
+input[type="checkbox"] {
+  -webkit-appearance: auto !important;
+  -moz-appearance: auto !important;
+  appearance: auto !important;
+  display: inline-block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+/* 自定义checkbox样式 */
+input[type="checkbox"] {
+  width: 16px !important;
+  height: 16px !important;
+  border: 2px solid #d1d5db !important;
+  border-radius: 4px !important;
+  background-color: white !important;
+  cursor: pointer !important;
+  position: relative !important;
+}
+
+input[type="checkbox"]:checked {
+  background-color: #3b82f6 !important;
+  border-color: #3b82f6 !important;
+}
+
+input[type="checkbox"]:checked::after {
+  content: '✓' !important;
+  position: absolute !important;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  color: white !important;
+  font-size: 12px !important;
+  font-weight: bold !important;
+}
+
+input[type="checkbox"]:focus {
+  outline: 2px solid #3b82f6 !important;
+  outline-offset: 2px !important;
+}
+</style>

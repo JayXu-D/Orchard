@@ -55,7 +55,7 @@
   "/src/view/login/index.vue": "Login",
   "/src/view/memberManagement/index.vue": "User",
   "/src/view/mustRead/index.vue": "MustReadPage",
-  "/src/view/my/index.vue": "MyPage",
+  "/src/view/my/index.vue": "MyDrawings",
   "/src/view/person/person.vue": "Person",
   "/src/view/routerHolder.vue": "RouterHolder",
   "/src/view/superAdmin/api/api.vue": "Api",

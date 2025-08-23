@@ -123,3 +123,12 @@ export const deleteDrawing = (data) => {
     data
   })
 }
+
+// 获取我的图纸列表（跨所有相册的可下载图纸）
+export const getMyDrawings = (data) => {
+  return service({
+    url: '/drawing/my',
+    method: 'post',
+    data
+  })
+}

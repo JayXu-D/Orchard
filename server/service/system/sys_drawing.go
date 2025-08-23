@@ -166,6 +166,143 @@ func (drawingService *DrawingService) GetDrawingList(req request.GetDrawingList)
 	return drawings, total, nil
 }
 
+// GetMyDrawings 获取当前用户可下载的图纸列表
+func (drawingService *DrawingService) GetMyDrawings(req request.GetMyDrawings) ([]*system.SysDrawing, int64, error) {
+	var drawings []*system.SysDrawing
+	var total int64
+
+	// 添加调试日志
+	global.GVA_LOG.Info("GetMyDrawings 开始查询",
+		zap.String("user_uuid", req.UserUUID),
+		zap.Uint("user_id", req.UserID),
+		zap.String("keyword", req.Keyword))
+
+	// 构建查询，获取用户有权限下载的图纸
+	// 用户有权限下载的图纸包括：
+	// 1. 用户创建的图纸
+	// 2. 用户是相册管理员的相册中的图纸
+	// 3. 图纸的AllowedMembers中包含该用户
+	db := global.GVA_DB.Model(&system.SysDrawing{}).
+		Joins("LEFT JOIN sys_albums ON sys_drawings.album_id = sys_albums.id").
+		Joins("LEFT JOIN sys_album_admin ON sys_albums.id = sys_album_admin.album_id").
+		Where("sys_drawings.creator_uuid = ? OR sys_album_admin.user_id = ? OR JSON_CONTAINS(sys_drawings.allowed_members, ?)",
+			req.UserUUID, req.UserID, fmt.Sprintf("\"%s\"", req.UserUUID))
+
+	// 添加搜索条件
+	if req.Keyword != "" {
+		db = db.Where("sys_drawings.serial_number LIKE ? OR sys_drawings.name LIKE ?",
+			"%"+req.Keyword+"%", "%"+req.Keyword+"%")
+	}
+
+	// 获取总数
+	err := db.Count(&total).Error
+	if err != nil {
+		global.GVA_LOG.Error("获取总数失败", zap.Error(err))
+		return nil, 0, err
+	}
+
+	global.GVA_LOG.Info("查询到的总数", zap.Int64("total", total))
+
+	// 分页查询
+	if req.Page > 0 && req.PageSize > 0 {
+		offset := (req.Page - 1) * req.PageSize
+		db = db.Offset(offset).Limit(req.PageSize)
+	}
+
+	// 预加载关联数据并去重，使用子查询来避免DISTINCT和ORDER BY的冲突
+	err = db.Preload("Album").Preload("Creator").
+		Order("sys_drawings.created_at DESC").
+		Find(&drawings).Error
+	if err != nil {
+		global.GVA_LOG.Error("查询图纸列表失败", zap.Error(err))
+		return nil, 0, err
+	}
+
+	global.GVA_LOG.Info("查询完成",
+		zap.Int("drawings_count", len(drawings)),
+		zap.Int64("total", total))
+
+	// 添加详细的调试日志
+	for i, drawing := range drawings {
+		global.GVA_LOG.Info("图纸详情",
+			zap.Int("index", i),
+			zap.Uint("id", drawing.ID),
+			zap.String("name", drawing.Name),
+			zap.String("serial_number", drawing.SerialNumber),
+			zap.Uint("album_id", drawing.AlbumID),
+			zap.String("creator_uuid", drawing.CreatorUUID.String()),
+			zap.String("album_title", drawing.Album.Title),
+			zap.String("creator_username", drawing.Creator.Username))
+	}
+
+	return drawings, total, nil
+}
+
+// UpdateEmptyDrawings 更新空白图纸记录（临时方法，用于测试）
+func (drawingService *DrawingService) UpdateEmptyDrawings() error {
+	// 查找所有空白的图纸记录
+	var emptyDrawings []system.SysDrawing
+	err := global.GVA_DB.Where("name = '' OR name IS NULL OR album_id = 0").Find(&emptyDrawings).Error
+	if err != nil {
+		return err
+	}
+
+	if len(emptyDrawings) == 0 {
+		global.GVA_LOG.Info("没有找到空白图纸记录")
+		return nil
+	}
+
+	global.GVA_LOG.Info("找到空白图纸记录", zap.Int("count", len(emptyDrawings)))
+
+	// 查找第一个可用的相册和用户
+	var album system.SysAlbum
+	err = global.GVA_DB.First(&album).Error
+	if err != nil {
+		global.GVA_LOG.Warn("没有找到相册数据")
+		return err
+	}
+
+	var user system.SysUser
+	err = global.GVA_DB.First(&user).Error
+	if err != nil {
+		global.GVA_LOG.Warn("没有找到用户数据")
+		return err
+	}
+
+	global.GVA_LOG.Info("使用相册和用户",
+		zap.Uint("album_id", album.ID),
+		zap.String("album_title", album.Title),
+		zap.String("user_uuid", user.UUID.String()),
+		zap.String("username", user.Username))
+
+	// 更新空白图纸记录
+	for i, drawing := range emptyDrawings {
+		updates := map[string]interface{}{
+			"album_id":         album.ID,
+			"serial_number":    fmt.Sprintf("TEST-%03d", i+1),
+			"name":             fmt.Sprintf("测试图纸%d", i+1),
+			"bean_quantity":    (i + 1) * 100,
+			"poster_image_url": fmt.Sprintf("uploads/test/poster%d.jpg", i+1),
+			"drawing_urls":     fmt.Sprintf(`["uploads/test/drawing%d.pdf", "uploads/test/drawing%d.dwg"]`, i+1, i+1),
+			"creator_uuid":     user.UUID,
+			"allowed_members":  fmt.Sprintf(`["%s"]`, user.UUID.String()),
+		}
+
+		err = global.GVA_DB.Model(&drawing).Updates(updates).Error
+		if err != nil {
+			global.GVA_LOG.Error("更新图纸失败",
+				zap.Uint("drawing_id", drawing.ID),
+				zap.Error(err))
+		} else {
+			global.GVA_LOG.Info("图纸更新成功",
+				zap.Uint("drawing_id", drawing.ID),
+				zap.String("name", updates["name"].(string)))
+		}
+	}
+
+	return nil
+}
+
 // DownloadDrawing 下载图纸
 func (drawingService *DrawingService) DownloadDrawing(req request.DownloadDrawing) (*systemRes.DownloadResponse, error) {
 	// 获取图纸信息

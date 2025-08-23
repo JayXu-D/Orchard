@@ -286,6 +286,64 @@ func (drawingApi *DrawingApi) GetWatermarkFile(c *gin.Context) {
 	c.File(filePath)
 }
 
+// GetMyDrawings 获取当前用户可下载的图纸列表
+// @Tags Drawing
+// @Summary 获取当前用户可下载的图纸列表
+// @Security ApiKeyAuth
+// @accept application/json
+// @Produce application/json
+// @Param data body request.GetMyDrawings true "获取我的图纸列表"
+// @Success 200 {object} response.Response{data=response.DrawingListResponse,msg=string} "获取成功"
+// @Router /drawing/my [post]
+func (drawingApi *DrawingApi) GetMyDrawings(c *gin.Context) {
+	var pageInfo request.GetMyDrawings
+	err := c.ShouldBindJSON(&pageInfo)
+	if err != nil {
+		response.FailWithMessage(err.Error(), c)
+		return
+	}
+
+	// 从JWT claims中获取当前用户信息
+	claims, exists := c.Get("claims")
+	if !exists {
+		response.FailWithMessage("用户信息获取失败", c)
+		return
+	}
+
+	userClaims := claims.(*request.CustomClaims)
+	pageInfo.UserID = userClaims.BaseClaims.ID
+	pageInfo.UserUUID = userClaims.BaseClaims.UUID.String()
+
+	list, total, err := drawingService.GetMyDrawings(pageInfo)
+	if err != nil {
+		global.GVA_LOG.Error("获取我的图纸列表失败!", zap.Error(err))
+		response.FailWithMessage("获取我的图纸列表失败", c)
+		return
+	}
+
+	drawingListResponse := systemRes.ToDrawingListResponse(list, total)
+	response.OkWithData(drawingListResponse, c)
+}
+
+// UpdateEmptyDrawings 更新空白图纸记录（临时方法，用于测试）
+// @Tags Drawing
+// @Summary 更新空白图纸记录
+// @Security ApiKeyAuth
+// @accept application/json
+// @Produce application/json
+// @Success 200 {object} response.Response{msg=string} "更新成功"
+// @Router /drawing/updateEmpty [post]
+func (drawingApi *DrawingApi) UpdateEmptyDrawings(c *gin.Context) {
+	err := drawingService.UpdateEmptyDrawings()
+	if err != nil {
+		global.GVA_LOG.Error("更新空白图纸失败!", zap.Error(err))
+		response.FailWithMessage("更新空白图纸失败", c)
+		return
+	}
+
+	response.OkWithMessage("空白图纸更新成功", c)
+}
+
 // GetDrawingFile 获取图纸文件
 // @Tags Drawing
 // @Summary 获取图纸文件

@@ -34,6 +34,8 @@ func (s *AlbumRouter) InitAlbumRouter(Router *gin.RouterGroup, PublicRouter *gin
 	{
 		drawingRouterWithoutRecord.POST("get", drawingApi.GetDrawingByID)                  // 根据ID获取图纸
 		drawingRouterWithoutRecord.POST("list", drawingApi.GetDrawingList)                 // 获取图纸列表
+		drawingRouterWithoutRecord.POST("my", drawingApi.GetMyDrawings)                    // 获取当前用户可下载的图纸列表
+		drawingRouterWithoutRecord.POST("updateEmpty", drawingApi.UpdateEmptyDrawings)     // 更新空白图纸记录（临时）
 		drawingRouterWithoutRecord.POST("download", drawingApi.DownloadDrawing)            // 下载图纸
 		drawingRouterWithoutRecord.POST("batchDownload", drawingApi.BatchDownloadDrawings) // 批量下载图纸
 		drawingRouterWithoutRecord.GET("watermark/:filename", drawingApi.GetWatermarkFile) // 获取水印文件

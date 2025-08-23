@@ -47,6 +47,15 @@ type GetDrawingList struct {
 	CreatorID uint   `json:"creatorId"`                  // 创建者ID
 }
 
+// GetMyDrawings 获取当前用户可下载的图纸列表请求
+type GetMyDrawings struct {
+	Page     int    `json:"page"`     // 页码
+	PageSize int    `json:"pageSize"` // 每页大小
+	Keyword  string `json:"keyword"`  // 搜索关键词
+	UserID   uint   `json:"-"`        // 当前用户ID（从JWT中获取）
+	UserUUID string `json:"-"`        // 当前用户UUID（从JWT中获取）
+}
+
 // DownloadDrawing 下载图纸请求
 type DownloadDrawing struct {
 	DrawingID     uint   `json:"drawingId" binding:"required"` // 图纸ID
