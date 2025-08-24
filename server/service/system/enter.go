@@ -20,6 +20,7 @@ type ServiceGroup struct {
 	SysVersionService
 	AlbumService
 	DrawingService
+	MustReadService
 	AutoCodePlugin   autoCodePlugin
 	AutoCodePackage  autoCodePackage
 	AutoCodeHistory  autoCodeHistory

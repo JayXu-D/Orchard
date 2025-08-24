@@ -21,6 +21,7 @@ type RouterGroup struct {
 	SysParamsRouter
 	SysVersionRouter
 	AlbumRouter
+	MustReadRouter
 }
 
 var (
@@ -46,4 +47,5 @@ var (
 	sysVersionApi       = api.ApiGroupApp.SystemApiGroup.SysVersionApi
 	albumApi            = api.ApiGroupApp.SystemApiGroup.AlbumApi
 	drawingApi          = api.ApiGroupApp.SystemApiGroup.DrawingApi
+	mustReadApi         = api.ApiGroupApp.SystemApiGroup.MustReadApi
 )

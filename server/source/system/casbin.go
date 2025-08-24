@@ -218,6 +218,12 @@ func (i *initCasbin) InitializeData(ctx context.Context) (context.Context, error
 		{Ptype: "p", V0: "888", V1: "/drawing/batchDownload", V2: "POST"},
 		{Ptype: "p", V0: "888", V1: "/drawing/my", V2: "POST"},
 
+		{Ptype: "p", V0: "888", V1: "/mustRead/create", V2: "POST"},
+		{Ptype: "p", V0: "888", V1: "/mustRead/delete", V2: "DELETE"},
+		{Ptype: "p", V0: "888", V1: "/mustRead/update", V2: "PUT"},
+		{Ptype: "p", V0: "888", V1: "/mustRead/get", V2: "POST"},
+		{Ptype: "p", V0: "888", V1: "/mustRead/latest", V2: "GET"},
+
 		{Ptype: "p", V0: "8881", V1: "/user/admin_register", V2: "POST"},
 		{Ptype: "p", V0: "8881", V1: "/api/createApi", V2: "POST"},
 		{Ptype: "p", V0: "8881", V1: "/api/getApiList", V2: "POST"},
@@ -264,7 +270,8 @@ func (i *initCasbin) InitializeData(ctx context.Context) (context.Context, error
 		{Ptype: "p", V0: "8881", V1: "/album/creator/:creatorUUID", V2: "GET"},
 		{Ptype: "p", V0: "8881", V1: "/album/admin/:adminID", V2: "GET"},
 		{Ptype: "p", V0: "8881", V1: "/album/get", V2: "POST"},
-
+		{Ptype: "p", V0: "8881", V1: "/mustRead/get", V2: "POST"},
+		{Ptype: "p", V0: "8881", V1: "/mustRead/latest", V2: "GET"},
 		// 图纸权限 - 角色8881（普通用户）
 		{Ptype: "p", V0: "8881", V1: "/drawing/create", V2: "POST"},
 		{Ptype: "p", V0: "8881", V1: "/drawing/update", V2: "PUT"},
@@ -335,6 +342,9 @@ func (i *initCasbin) InitializeData(ctx context.Context) (context.Context, error
 		{Ptype: "p", V0: "9528", V1: "/drawing/download", V2: "POST"},
 		{Ptype: "p", V0: "9528", V1: "/drawing/batchDownload", V2: "POST"},
 		{Ptype: "p", V0: "9528", V1: "/drawing/my", V2: "POST"},
+
+		{Ptype: "p", V0: "9528", V1: "/mustRead/get", V2: "POST"},
+		{Ptype: "p", V0: "9528", V1: "/mustRead/latest", V2: "GET"},
 	}
 	if err := db.Create(&entities).Error; err != nil {
 		return ctx, errors.Wrap(err, "Casbin 表 ("+i.InitializerName()+") 数据初始化失败!")

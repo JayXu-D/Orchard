@@ -25,6 +25,7 @@ type ApiGroup struct {
 	SysVersionApi
 	AlbumApi
 	DrawingApi
+	MustReadApi
 }
 
 var (
@@ -50,4 +51,5 @@ var (
 	sysVersionService       = service.ServiceGroupApp.SystemServiceGroup.SysVersionService
 	albumService            = service.ServiceGroupApp.SystemServiceGroup.AlbumService
 	drawingService          = service.ServiceGroupApp.SystemServiceGroup.DrawingService
+	mustReadService         = service.ServiceGroupApp.SystemServiceGroup.MustReadService
 )
