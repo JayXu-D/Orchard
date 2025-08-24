@@ -53,6 +53,24 @@
                   @onCreated="handleCreated"
                 />
               </div>
+              <!-- 自定义图片上传按钮 -->
+              <div class="mt-2 flex items-center space-x-2">
+                <input
+                  ref="imageInput"
+                  type="file"
+                  accept="image/*"
+                  style="display: none"
+                  @change="handleImageUpload"
+                />
+                <el-button 
+                  size="small" 
+                  @click="imageInput.click()"
+                  icon="Picture"
+                >
+                  插入图片
+                </el-button>
+                <span class="text-sm text-gray-500">支持 JPG、PNG、GIF 格式，最大 10MB</span>
+              </div>
             </div>
             
             <!-- 操作按钮 -->
@@ -89,6 +107,8 @@ import '@wangeditor/editor/dist/css/style.css'
 import { Editor, Toolbar } from '@wangeditor/editor-for-vue'
 import { useUserStore } from '@/pinia/modules/user'
 import { createMustRead, updateMustRead, getLatestMustRead } from '@/api/mustRead'
+import { uploadFile } from '@/api/fileUploadAndDownload'
+import { getBaseUrl } from '@/utils/format'
 
 defineOptions({
   name: 'MustReadPage'
@@ -98,14 +118,59 @@ const activeMenu = ref('must-read')
 const isEditMode = ref(false)
 const saving = ref(false)
 const editorRef = ref()
+const imageInput = ref()
 const userStore = useUserStore()
 const editorConfig = ref({
   placeholder: '请输入内容...',
-  MENU_CONF: {}
+  MENU_CONF: {
+    uploadImage: {
+      server: `${getBaseUrl()}/fileUploadAndDownload/upload`,
+      fieldName: 'file',
+      maxFileSize: 10 * 1024 * 1024, // 10MB
+      maxNumberOfFiles: 10,
+      allowedFileTypes: ['image/*'],
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('token') || ''}`
+      },
+      customInsert(res, insertFn) {
+        // 自定义插入图片的逻辑
+        if (res.code === 0 && res.data && res.data.file) {
+          const url = res.data.file.url
+          // 如果返回的是相对路径，需要拼接完整的URL
+          const fullUrl = url.startsWith('http') ? url : `${getBaseUrl()}${url}`
+          insertFn(fullUrl, res.data.file.name || '图片', fullUrl)
+        } else {
+          ElMessage.error('图片上传失败')
+        }
+      },
+      onError(file, err, res) {
+        console.error('图片上传失败:', err, res)
+        ElMessage.error('图片上传失败')
+      },
+      onProgress(file, progress) {
+        console.log('上传进度:', progress)
+      },
+      // 添加更多配置选项
+      timeout: 30000, // 30秒超时
+      onBeforeUpload(file) {
+        console.log('准备上传图片:', file.name)
+        return file
+      },
+      onSuccess(file, res) {
+        console.log('图片上传成功:', res)
+      }
+    }
+  }
 })
 
 const toolbarConfig = ref({
-  excludeKeys: []
+  excludeKeys: [
+    // 排除一些不需要的工具栏按钮，但保留图片上传
+    'group-video',
+    'insertTable',
+    'codeBlock',
+    'fullScreen'
+  ]
 })
 
 // 内容数据
@@ -231,6 +296,62 @@ const saveContent = async () => {
 // 编辑器创建完成
 const handleCreated = (editor) => {
   editorRef.value = editor
+  console.log('编辑器创建完成:', editor)
+  
+  // 检查编辑器配置
+  console.log('编辑器配置:', editor.getConfig())
+  
+  // 检查是否有图片上传菜单
+  const menus = editor.getMenuConfig()
+  console.log('菜单配置:', menus)
+}
+
+// 处理图片上传
+const handleImageUpload = async (event) => {
+  const file = event.target.files[0]
+  if (!file) return
+  
+  // 检查文件大小
+  if (file.size > 10 * 1024 * 1024) {
+    ElMessage.error('图片大小不能超过 10MB')
+    return
+  }
+  
+  // 检查文件类型
+  if (!file.type.startsWith('image/')) {
+    ElMessage.error('请选择图片文件')
+    return
+  }
+  
+  try {
+    const formData = new FormData()
+    formData.append('file', file)
+    
+    const res = await uploadFile(formData)
+    
+    if (res.code === 0 && res.data && res.data.file) {
+      const url = res.data.file.url
+      const fullUrl = url.startsWith('http') ? url : `${getBaseUrl()}${url}`
+      
+      // 在编辑器中插入图片
+      if (editorRef.value) {
+        editorRef.value.insertImage({
+          url: fullUrl,
+          alt: file.name,
+          href: fullUrl
+        })
+        ElMessage.success('图片插入成功')
+      }
+    } else {
+      ElMessage.error('图片上传失败')
+    }
+  } catch (error) {
+    console.error('图片上传失败:', error)
+    ElMessage.error('图片上传失败')
+  }
+  
+  // 清空文件输入框
+  event.target.value = ''
 }
 
 // 菜单切换处理
