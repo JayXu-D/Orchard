@@ -4,9 +4,9 @@
     <AppSidebar :active-menu="activeMenu" @menu-change="handleMenuChange" />
     
     <!-- 主内容区域 -->
-    <div class="flex-1 flex flex-col ml-[15px] bg-white rounded-[10px]">
+    <div class="flex-1 flex flex-col ml-[15px] bg-white rounded-[10px] min-h-0 min-w-0">
       <!-- 主要内容 -->
-      <div class="flex-1 py-[30px] px-[48px]">
+      <div class="flex-1 overflow-auto py-[30px] px-[48px]">
         <!-- 页面标题 -->
         <div class="flex items-center justify-between mb-8">
           <h1 class="text-2xl font-semibold text-gray-900">我的图纸</h1>

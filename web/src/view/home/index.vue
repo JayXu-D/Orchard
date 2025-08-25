@@ -4,11 +4,12 @@
     <AppSidebar :active-menu="activeMenu" @menu-change="handleMenuChange" />
     
     <!-- 主内容区域 -->
-    <div class="flex-1 flex flex-col ml-[15px] bg-white rounded-[10px]">
+    <div class="flex-1 flex flex-col ml-[15px] bg-white rounded-[10px] min-h-0 min-w-0">
     
-      <!-- 主要内容 -->
-      <div class="flex-1 py-[30px] px-[48px]">
-        <div class="flex-1">
+      <!-- 主要内容（可滚动容器） -->
+      <div class="flex-1 overflow-auto py-[30px] px-[48px]">
+        <!-- 内容包裹 -->
+        <div class="min-w-0">
           <!-- 标题和按钮 -->
           <div class="flex items-center justify-between mb-8">
             <h1 class="text-2xl font-semibold text-gray-900">所有相册</h1>
