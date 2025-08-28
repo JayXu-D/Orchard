@@ -104,3 +104,70 @@ web
  └── yarn.lock
 
 ```
+
+打包web
+npm run build
+
+打包server
+set GOARCH=amd64
+set GOOS=linux
+go build
+
+服务器
+安装mysql
+
+# 更新包列表
+sudo apt update
+
+# 安装 MySQL
+sudo apt install mysql-server
+
+# 启动 MySQL 服务
+sudo systemctl start mysql
+sudo systemctl enable mysql
+
+安装radis
+sudo apt install redis-server
+sudo systemctl start redis-server
+sudo systemctl enable redis-server
+
+安装nginx
+sudo apt install nginx -y
+sudo systemctl start nginx         # 启动Nginx
+sudo systemctl enable nginx        # 设置开机自启
+sudo systemctl status nginx         # 查看运行状态
+sudo ufw allow 'Nginx Full'
+重载ngnix
+sudo nginx -t
+sudo systemctl reload nginx
+
+sudo vim /etc/ngnix/ngnix.conf
+server {
+            listen 80;
+            server_name 121.43.127.128; # 你的域名或服务器IP
+            root /var/www/orchard; # dist目录的绝对路径
+            index index.html;
+
+            location / {
+                 try_files $uri $uri/ /index.html; # 支持前端路由
+            }
+
+            # 可选：配置反向代理解决跨域（如需调用后端API）
+            location /api/ {
+                proxy_pass http://127.0.0.1:8888/;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            }
+
+            location /apiFileupload/ {
+                alias /var/www/orchard/pipixia/uploads/file/;
+                access_log off;
+                expires 30d;
+                add_header Cache-Control "public, max-age=2592000";
+                try_files $uri =404;
+                location ~* \.(php|pl|py|sh|cgi)$ {
+                    deny all;
+                 }
+                }
+        }
