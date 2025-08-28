@@ -106,10 +106,13 @@
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap">
                   <button @click="downloadDrawing(drawing)" :disabled="!drawing.canDownload"
-                    class="px-3 py-1 text-sm rounded transition-colors" :class="drawing.downloaded
-                      ? 'bg-gray-300 text-gray-600 cursor-not-allowed'
-                      : 'bg-red-500 text-white hover:bg-red-600'">
-                    {{ drawing.downloaded ? '重新下载' : '下载图纸' }}
+                    class="px-3 py-1 text-sm rounded transition-colors"
+                    :class="!drawing.canDownload
+                      ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                      : (drawing.downloaded
+                        ? 'bg-gray-300 text-gray-600 cursor-not-allowed'
+                        : 'bg-red-500 text-white hover:bg-red-600')">
+                    {{ !drawing.canDownload ? '暂无权限' : (drawing.downloaded ? '重新下载' : '下载图纸') }}
                   </button>
                 </td>
                 <td v-if="canManage" class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -636,7 +639,7 @@ const fetchDrawings = async () => {
         beanQuantity: d.beanQuantity || d.bean_quantity || null,
         drawingURLs: (d.drawingURLs || d.drawing_urls || []).map(url => getBaseUrl() + url),
         posterImage: getBaseUrl() + (d.posterImageURL || ''),
-        canDownload: true, // TODO: 根据实际权限判断
+        canDownload: d.creatorUUID === userStore.userInfo.uuid || d.allowedMemberUUIDs.includes(userStore.userInfo.uuid), // TODO: 当前用户是图纸创建者或者当前用户是图纸的允许成员 
         canEdit: d.creatorUUID === userStore.userInfo.uuid, // 只有上传者可以编辑
         downloaded: false // TODO: 根据实际下载状态判断
       }))

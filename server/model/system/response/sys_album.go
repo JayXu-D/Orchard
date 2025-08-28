@@ -102,14 +102,12 @@ func ComputeAlbumCounts(albumID uint, userUUID uuid.UUID, userID uint) (progress
 		Where("album_id = ?", albumID).
 		Count(&total64)
 
-	// 统计可下载数：创建者、管理员、或 allowed_members 包含该用户UUID
+	// 统计可下载数：仅创建者或 allowed_members 包含该用户UUID
 	var downloadable int64
 	global.GVA_DB.
 		Model(&system.SysDrawing{}).
-		Joins("LEFT JOIN sys_albums ON sys_drawings.album_id = sys_albums.id").
-		Joins("LEFT JOIN sys_album_admin ON sys_albums.id = sys_album_admin.album_id").
-		Where("sys_drawings.album_id = ? AND (sys_drawings.creator_uuid = ? OR sys_album_admin.user_id = ? OR JSON_CONTAINS(sys_drawings.allowed_members, ?))",
-			albumID, userUUID, userID, "\""+userUUID.String()+"\"").
+		Where("sys_drawings.album_id = ? AND (sys_drawings.creator_uuid = ? OR JSON_CONTAINS(sys_drawings.allowed_members, ?))",
+			albumID, userUUID, "\""+userUUID.String()+"\"").
 		Count(&downloadable)
 
 	return int(downloadable), int(total64)
