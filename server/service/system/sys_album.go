@@ -184,9 +184,9 @@ func (albumService *AlbumService) GetAlbumList(info albumRequest.GetAlbumList) (
 	if info.Title != "" {
 		db = db.Where("title LIKE ?", "%"+info.Title+"%")
 	}
-	if info.CreatorUUID != uuid.Nil {
-		db = db.Where("creator_uuid = ?", info.CreatorUUID)
-	}
+	// if info.CreatorUUID != uuid.Nil {
+	// 	db = db.Where("creator_uuid = ?", info.CreatorUUID)
+	// }
 	if info.Status != 0 {
 		db = db.Where("status = ?", info.Status)
 	}

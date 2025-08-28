@@ -3,6 +3,7 @@ package response
 import (
 	"time"
 
+	"github.com/flipped-aurora/gin-vue-admin/server/global"
 	"github.com/flipped-aurora/gin-vue-admin/server/model/system"
 	"github.com/google/uuid"
 )
@@ -19,6 +20,8 @@ type AlbumResponse struct {
 	UpdatedAt     time.Time  `json:"updatedAt" example:"更新时间"`
 	Creator       UserInfo   `json:"creator" example:"创建者信息"`
 	AdminUsers    []UserInfo `json:"adminUsers" example:"管理员列表"`
+	Progress      int        `json:"progress" example:"可下载图纸数"`
+	Total         int        `json:"total" example:"图纸总数"`
 }
 
 // UserInfo 用户信息响应结构
@@ -88,4 +91,26 @@ func ToAlbumListResponse(albums []system.SysAlbum, total int64) AlbumListRespons
 		Albums: albumResponses,
 		Total:  total,
 	}
+}
+
+// ComputeAlbumCounts 计算相册图纸总数与当前用户可下载数
+func ComputeAlbumCounts(albumID uint, userUUID uuid.UUID, userID uint) (progress int, total int) {
+	// 统计总数
+	var total64 int64
+	global.GVA_DB.
+		Model(&system.SysDrawing{}).
+		Where("album_id = ?", albumID).
+		Count(&total64)
+
+	// 统计可下载数：创建者、管理员、或 allowed_members 包含该用户UUID
+	var downloadable int64
+	global.GVA_DB.
+		Model(&system.SysDrawing{}).
+		Joins("LEFT JOIN sys_albums ON sys_drawings.album_id = sys_albums.id").
+		Joins("LEFT JOIN sys_album_admin ON sys_albums.id = sys_album_admin.album_id").
+		Where("sys_drawings.album_id = ? AND (sys_drawings.creator_uuid = ? OR sys_album_admin.user_id = ? OR JSON_CONTAINS(sys_drawings.allowed_members, ?))",
+			albumID, userUUID, userID, "\""+userUUID.String()+"\"").
+		Count(&downloadable)
+
+	return int(downloadable), int(total64)
 }

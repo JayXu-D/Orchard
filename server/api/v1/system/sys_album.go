@@ -7,6 +7,7 @@ import (
 	"github.com/flipped-aurora/gin-vue-admin/server/model/common/response"
 	"github.com/flipped-aurora/gin-vue-admin/server/model/system/request"
 	systemRes "github.com/flipped-aurora/gin-vue-admin/server/model/system/response"
+	"github.com/flipped-aurora/gin-vue-admin/server/utils"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"go.uber.org/zap"
@@ -39,6 +40,11 @@ func (albumApi *AlbumApi) CreateAlbum(c *gin.Context) {
 	}
 
 	albumResponse := systemRes.ToAlbumResponse(album)
+	userUUID := utils.GetUserUuid(c)
+	userID := utils.GetUserID(c)
+	progress, total := systemRes.ComputeAlbumCounts(album.ID, userUUID, userID)
+	albumResponse.Progress = progress
+	albumResponse.Total = total
 	response.OkWithData(albumResponse, c)
 }
 
@@ -149,6 +155,13 @@ func (albumApi *AlbumApi) GetAlbumList(c *gin.Context) {
 	}
 
 	albumListResponse := systemRes.ToAlbumListResponse(list, total)
+	userUUID := utils.GetUserUuid(c)
+	userID := utils.GetUserID(c)
+	for i := range albumListResponse.Albums {
+		p, t := systemRes.ComputeAlbumCounts(albumListResponse.Albums[i].ID, userUUID, userID)
+		albumListResponse.Albums[i].Progress = p
+		albumListResponse.Albums[i].Total = t
+	}
 	response.OkWithData(albumListResponse, c)
 }
 

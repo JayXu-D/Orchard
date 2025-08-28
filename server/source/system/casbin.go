@@ -272,6 +272,7 @@ func (i *initCasbin) InitializeData(ctx context.Context) (context.Context, error
 		{Ptype: "p", V0: "8881", V1: "/album/get", V2: "POST"},
 		{Ptype: "p", V0: "8881", V1: "/mustRead/get", V2: "POST"},
 		{Ptype: "p", V0: "8881", V1: "/mustRead/latest", V2: "GET"},
+		
 		// 图纸权限 - 角色8881（普通用户）
 		{Ptype: "p", V0: "8881", V1: "/drawing/create", V2: "POST"},
 		{Ptype: "p", V0: "8881", V1: "/drawing/update", V2: "PUT"},

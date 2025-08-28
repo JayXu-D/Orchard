@@ -81,6 +81,7 @@ onMounted(() => document.addEventListener('click', handleClickOutside))
 onUnmounted(() => document.removeEventListener('click', handleClickOutside))
 
 const emitSettings = () => {
+  console.log("album:"+props.album.total)
   showMenu.value = false
   emit('settings', props.album)
 }

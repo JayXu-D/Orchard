@@ -33,7 +33,7 @@
       <!-- 用户下拉菜单 -->
       <div v-if="showUserMenu"
         class="absolute bottom-0 left-full ml-2 w-32 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
-        <div class="px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 cursor-pointer"
+        <div v-if="userStore.userInfo.authorityId === 888" class="px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 cursor-pointer"
           @click="handleUserMenuClick('member')">
           成员管理
         </div>

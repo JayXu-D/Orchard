@@ -167,8 +167,8 @@ const fetchAlbums = async () => {
     albums.value = arr.map(a => ({
       id: a.id || a.ID,
       name: a.title,
-      progress: 0,
-      total: 0,
+      progress: a.progress,
+      total: a.total,
       cover: getBaseUrl() + a.coverImageURL,
       creatorUUID: a.creatorUUID || a.creator?.uuid
     }))
