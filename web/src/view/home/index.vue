@@ -122,6 +122,7 @@ const closeSettings = () => {
 
 const handleUpdateAlbum = async (data) => {
   try {
+    console.log('更新相册数据:', data)
     let coverUrl = data.coverImageURL || ''
     if (data.coverFile) {
       const form = new FormData()
@@ -130,6 +131,8 @@ const handleUpdateAlbum = async (data) => {
       if (uploadRes.code === 0 && uploadRes.data && uploadRes.data.file) {
         coverUrl = uploadRes.data.file.url || ''
       }
+    } else {
+      coverUrl = data.coverImageURL.replace(getBaseUrl(), '')
     }
     const payload = {
       id: data.id,
