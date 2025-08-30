@@ -639,7 +639,8 @@ const fetchDrawings = async () => {
         beanQuantity: d.beanQuantity || d.bean_quantity || null,
         drawingURLs: (d.drawingURLs || d.drawing_urls || []).map(url => getBaseUrl() + url),
         posterImage: getBaseUrl() + (d.posterImageURL || ''),
-        canDownload: d.creatorUUID === userStore.userInfo.uuid || d.allowedMemberUUIDs.includes(userStore.userInfo.uuid), // TODO: 当前用户是图纸创建者或者当前用户是图纸的允许成员 
+        allowedMembers: (d.allowedMemberUUIDs || []).map(uuid => ({ uuid: uuid.toString() })),
+        canDownload: d.creatorUUID === userStore.userInfo.uuid || d.allowedMemberUUIDs.includes(userStore.userInfo.uuid),
         canEdit: d.creatorUUID === userStore.userInfo.uuid, // 只有上传者可以编辑
         downloaded: false // TODO: 根据实际下载状态判断
       }))

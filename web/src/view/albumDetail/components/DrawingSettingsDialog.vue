@@ -127,21 +127,24 @@
               添加成员
             </button>
           </div>
-          <div v-if="formData.allowedMembers.length > 0" class="members-list">
-            <div
-              v-for="member in formData.allowedMembers"
-              :key="member.id"
-              class="flex items-center justify-between p-2 bg-gray-50 rounded mb-2"
-            >
-              <span class="text-sm">{{ member.name }} (ID: {{ member.id }})</span>
-              <button
-                @click="removeMember(member.id)"
-                class="text-red-500 hover:text-red-700 text-sm"
-              >
-                移除
-              </button>
-            </div>
-          </div>
+                     <div v-if="formData.allowedMembers.length > 0" class="members-list">
+             <div
+               v-for="member in formData.allowedMembers"
+               :key="member.id"
+               class="flex items-center justify-between p-2 bg-gray-50 rounded mb-2"
+             >
+               <div class="flex flex-col">
+                 <span class="text-sm font-medium">{{ member.name || `用户${member.id}` }}</span>
+                 <span class="text-xs text-gray-500">ID: {{ member.id }}</span>
+               </div>
+               <button
+                 @click="removeMember(member.id)"
+                 class="text-red-500 hover:text-red-700 text-sm"
+               >
+                 移除
+               </button>
+             </div>
+           </div>
           <div v-else class="text-sm text-gray-400">
             暂未添加下载权限成员
           </div>
@@ -171,9 +174,28 @@
           placeholder="搜索成员姓名或ID"
           @input="searchMembers"
           class="mb-4"
-        />
+        >
+          <template #suffix>
+            <el-icon v-if="searchLoading" class="is-loading">
+              <svg class="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+            </el-icon>
+          </template>
+        </el-input>
         <div class="members-search-results">
+          <div v-if="searchLoading" class="p-4 text-center text-gray-500">
+            搜索中...
+          </div>
+          <div v-else-if="memberSearchKeyword.trim() && filteredMembers.length === 0" class="p-4 text-center text-gray-500">
+            未找到匹配的用户
+          </div>
+          <div v-else-if="!memberSearchKeyword.trim()" class="p-4 text-center text-gray-500">
+            请输入关键词搜索用户
+          </div>
           <div
+            v-else
             v-for="member in filteredMembers"
             :key="member.id"
             class="flex items-center justify-between p-2 hover:bg-gray-50 rounded cursor-pointer"
@@ -189,9 +211,10 @@
 </template>
 
 <script setup>
-import { ref, reactive, watch } from 'vue'
+import { ref, reactive, watch, nextTick, onUnmounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { getBaseUrl } from '@/utils/format'
+import { getUserList } from '@/api/user'
 
 defineOptions({
   name: 'DrawingSettingsDialog'
@@ -249,6 +272,9 @@ const loading = ref(false)
 const showAddMemberDialog = ref(false)
 const memberSearchKeyword = ref('')
 const filteredMembers = ref([])
+const searchLoading = ref(false)
+const searchTimeout = ref(null)
+const userCache = ref(new Map()) // 用户信息缓存
 
 // 格式化序号
 const formatSerialNumber = (value) => {
@@ -319,22 +345,106 @@ const removeDrawing = (index) => {
 
 // 搜索成员
 const searchMembers = async () => {
-  if (memberSearchKeyword.value.trim()) {
-    // 模拟搜索结果
-    filteredMembers.value = [
-      { id: 1, name: '用户1', authority: { authorityName: '普通用户' } },
-      { id: 2, name: '用户2', authority: { authorityName: '管理员' } }
-    ]
-  } else {
-    filteredMembers.value = []
+  // 清除之前的定时器
+  if (searchTimeout.value) {
+    clearTimeout(searchTimeout.value)
+  }
+  
+  // 设置防抖延迟
+  searchTimeout.value = setTimeout(async () => {
+    if (memberSearchKeyword.value.trim()) {
+      try {
+        searchLoading.value = true
+        const response = await getUserList({
+          page: 1,
+          pageSize: 50,
+          username: memberSearchKeyword.value.trim()
+        })
+        
+        if (response.code === 0 && response.data && response.data.list) {
+          // 将用户信息缓存起来
+          response.data.list.forEach(user => {
+            userCache.value.set(user.uuid, {
+              id: user.ID,
+              uuid: user.uuid,
+              name: user.nickName || user.username,
+              authority: { authorityName: user.authority?.authorityName || '未知权限' }
+            })
+          })
+          
+          // 过滤掉已经在允许列表中的用户
+          filteredMembers.value = response.data.list.filter(user => 
+            !formData.allowedMembers.find(m => m.uuid === user.uuid)
+          ).map(user => ({
+            id: user.ID,
+            uuid: user.uuid,
+            name: user.nickName || user.username,
+            authority: { authorityName: user.authority?.authorityName || '未知权限' }
+          }))
+        } else {
+          filteredMembers.value = []
+        }
+      } catch (error) {
+        console.error('搜索用户失败:', error)
+        ElMessage.error('搜索用户失败，请稍后重试')
+        filteredMembers.value = []
+      } finally {
+        searchLoading.value = false
+      }
+    } else {
+      filteredMembers.value = []
+      searchLoading.value = false
+    }
+  }, 300) // 300ms 防抖延迟
+}
+
+// 预加载用户信息
+const preloadUserInfo = async (uuids) => {
+  if (!uuids || uuids.length === 0) return
+  
+  try {
+    // 过滤掉已经缓存的UUID
+    const uncachedUuids = uuids.filter(uuid => !userCache.value.has(uuid))
+    if (uncachedUuids.length === 0) return
+    
+    // 批量获取用户信息
+    const response = await getUserList({
+      page: 1,
+      pageSize: 100,
+      // 这里可以根据需要添加其他搜索条件
+    })
+    
+    if (response.code === 0 && response.data && response.data.list) {
+      // 将用户信息缓存起来
+      response.data.list.forEach(user => {
+        if (user.uuid) {
+          userCache.value.set(user.uuid, {
+            id: user.ID,
+            uuid: user.uuid,
+            name: user.nickName || user.username,
+            authority: { authorityName: user.authority?.authorityName || '未知权限' }
+          })
+        }
+      })
+      console.log('预加载用户信息成功:', userCache.value)
+    }
+  } catch (error) {
+    console.error('预加载用户信息失败:', error)
   }
 }
+
+// 清理定时器
+onUnmounted(() => {
+  if (searchTimeout.value) {
+    clearTimeout(searchTimeout.value)
+  }
+})
 
 // 添加成员
 const addMember = (member) => {
   if (!formData.allowedMembers.find(m => m.id === member.id)) {
     formData.allowedMembers.push({
-      id: member.id,
+      id: member.uuid.toString(),
       name: member.name,
       addedTime: new Date().toISOString()
     })
@@ -388,7 +498,7 @@ const handleConfirm = async () => {
 }
 
 // 监听visible和drawing变化，初始化表单
-watch([() => props.visible, () => props.drawing], ([visible, drawing]) => {
+watch([() => props.visible, () => props.drawing], async ([visible, drawing]) => {
   if (visible && drawing) {
     // 填充表单数据
     formData.id = drawing.id || ''
@@ -400,7 +510,65 @@ watch([() => props.visible, () => props.drawing], ([visible, drawing]) => {
     formData.drawings = (drawing.drawingURLs || []).map(url => {
       return url
     })
-    formData.allowedMembers = drawing.allowedMembers || []
+    
+    // 处理allowedMembers，获取用户详细信息
+    if (drawing.allowedMembers && drawing.allowedMembers.length > 0) {
+      try {
+        // 获取所有允许成员的详细信息
+        const memberDetails = drawing.allowedMembers.map((member) => {
+          console.log('获取成员详细信息:', member)
+          if (member.uuid) {
+            // 尝试从缓存中获取用户信息
+            const cachedUser = userCache.value.get(member.uuid)
+            console.log('缓存中获取用户信息:', cachedUser)
+            if (cachedUser) {
+              return {
+                id: cachedUser.id,
+                uuid: member.uuid,
+                name: cachedUser.name,
+                addedTime: member.addedTime || new Date().toISOString()
+              }
+            } else {
+              // 如果缓存中没有，使用已有的信息或默认值
+              return {
+                id: member.id || 0,
+                uuid: member.uuid,
+                name: member.name || '未知用户',
+                addedTime: member.addedTime || new Date().toISOString()
+              }
+            }
+          }
+          return member
+        })
+        formData.allowedMembers = memberDetails
+        
+        // 预加载用户信息
+        const uuids = memberDetails.map(m => m.uuid).filter(Boolean)
+        if (uuids.length > 0) {
+          await preloadUserInfo(uuids)
+          // 重新设置成员信息，使用预加载的数据
+          formData.allowedMembers = memberDetails.map(member => {
+            if (member.uuid) {
+              const cachedUser = userCache.value.get(member.uuid)
+              if (cachedUser) {
+                return {
+                  id: cachedUser.id,
+                  uuid: member.uuid,
+                  name: cachedUser.name,
+                  addedTime: member.addedTime || new Date().toISOString()
+                }
+              }
+            }
+            return member
+          })
+        }
+      } catch (error) {
+        console.error('获取成员详细信息失败:', error)
+        formData.allowedMembers = drawing.allowedMembers || []
+      }
+    } else {
+      formData.allowedMembers = []
+    }
   } else if (visible) {
     // 重置表单
     formData.id = ''
