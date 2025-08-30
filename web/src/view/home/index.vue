@@ -173,7 +173,8 @@ const fetchAlbums = async () => {
       progress: a.progress,
       total: a.total,
       cover: getBaseUrl() + a.coverImageURL,
-      creatorUUID: a.creatorUUID || a.creator?.uuid
+      creatorUUID: a.creatorUUID || a.creator?.uuid,
+      adminUsers: a.adminUsers || []
     }))
 
     console.log("albums", albums.value)
