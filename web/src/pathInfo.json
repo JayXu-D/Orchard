@@ -54,6 +54,7 @@
   "/src/view/layout/tabs/index.vue": "HistoryComponent",
   "/src/view/login/index.vue": "Login",
   "/src/view/memberManagement/index.vue": "User",
+  "/src/view/memberManagement/userDetail.vue": "UserDetail",
   "/src/view/mustRead/index.vue": "MustReadPage",
   "/src/view/my/index.vue": "MyDrawings",
   "/src/view/person/person.vue": "Person",

@@ -179,3 +179,33 @@ export const resetPassword = (data) => {
     data: data
   })
 }
+
+// @Tags User
+// @Summary 获取用户详情
+// @Security ApiKeyAuth
+// @accept application/json
+// @Produce application/json
+// @Param data body {id: "number"} true "获取用户详情"
+// @Success 200 {string} json "{"success":true,"data":{},"msg":"获取成功"}"
+// @Router /user/getUserDetail [get]
+export const getUserDetail = (id) => {
+  return service({
+    url: `/user/getUserDetail/${id}`,
+    method: 'get'
+  })
+}
+
+// @Tags User
+// @Summary 获取用户图纸列表
+// @Security ApiKeyAuth
+// @accept application/json
+// @Produce application/json
+// @Param data body {id: "number"} true "获取用户图纸列表"
+// @Success 200 {string} json "{"success":true,"data":{},"msg":"获取成功"}"
+// @Router /user/getUserDrawings [get]
+export const getUserDrawings = (id) => {
+  return service({
+    url: `/user/getUserDrawings/${id}`,
+    method: 'get'
+  })
+}

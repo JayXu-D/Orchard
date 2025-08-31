@@ -80,6 +80,8 @@ func (i *initCasbin) InitializeData(ctx context.Context) (context.Context, error
 		{Ptype: "p", V0: "888", V1: "/user/setUserInfo", V2: "PUT"},
 		{Ptype: "p", V0: "888", V1: "/user/setSelfInfo", V2: "PUT"},
 		{Ptype: "p", V0: "888", V1: "/user/getUserList", V2: "POST"},
+		{Ptype: "p", V0: "888", V1: "/user/getUserDetail/:id", V2: "GET"},
+		{Ptype: "p", V0: "888", V1: "/user/getUserDrawings/:id", V2: "GET"},
 		{Ptype: "p", V0: "888", V1: "/user/deleteUser", V2: "DELETE"},
 		{Ptype: "p", V0: "888", V1: "/user/changePassword", V2: "POST"},
 		{Ptype: "p", V0: "888", V1: "/user/setUserAuthority", V2: "POST"},

@@ -481,3 +481,66 @@ func (b *BaseApi) ResetPassword(c *gin.Context) {
 	}
 	response.OkWithMessage("重置成功", c)
 }
+
+// GetUserDetail
+// @Tags      SysUser
+// @Summary   获取用户详情
+// @Security  ApiKeyAuth
+// @accept    application/json
+// @Produce   application/json
+// @Param     id   path      int                           true  "用户ID"
+// @Success   200  {object}  response.Response{data=system.SysUser,msg=string}  "获取用户详情"
+// @Router    /user/getUserDetail/{id} [get]
+func (b *BaseApi) GetUserDetail(c *gin.Context) {
+	id := c.Param("id")
+	userID, err := strconv.Atoi(id)
+	if err != nil {
+		response.FailWithMessage("用户ID格式错误", c)
+		return
+	}
+
+	user, err := userService.FindUserById(userID)
+	if err != nil {
+		global.GVA_LOG.Error("获取用户详情失败!", zap.Error(err))
+		response.FailWithMessage("获取用户详情失败", c)
+		return
+	}
+	response.OkWithDetailed(user, "获取成功", c)
+}
+
+// GetUserDrawings
+// @Tags      SysUser
+// @Summary   获取用户图纸列表
+// @Security  ApiKeyAuth
+// @accept    application/json
+// @Produce   application/json
+// @Param     id   path      int                           true  "用户ID"
+// @Success   200  {object}  response.Response{data=[]map[string]interface{},msg=string}  "获取用户图纸列表"
+// @Router    /user/getUserDrawings/{id} [get]
+func (b *BaseApi) GetUserDrawings(c *gin.Context) {
+	id := c.Param("id")
+	_, err := strconv.Atoi(id)
+	if err != nil {
+		response.FailWithMessage("用户ID格式错误", c)
+		return
+	}
+
+	// TODO: 这里需要根据实际的业务逻辑来实现
+	// 目前返回模拟数据，实际应该从数据库查询用户的图纸信息
+	drawings := []map[string]interface{}{
+		{
+			"serialNumber":     "XX-12-19",
+			"drawingName":      "图纸名称图纸名称图纸名称1",
+			"acquisitionTime":  "2025-05-11T12:44:00Z",
+			"lastDownloadTime": "2025-06-11T12:44:00Z",
+		},
+		{
+			"serialNumber":     "AB-11-99",
+			"drawingName":      "图纸名称图纸名称图纸名称2",
+			"acquisitionTime":  "2025-12-11T12:44:00Z",
+			"lastDownloadTime": nil,
+		},
+	}
+
+	response.OkWithDetailed(drawings, "获取成功", c)
+}

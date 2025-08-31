@@ -57,6 +57,11 @@ const routes = [
     component: () => import('@/view/memberManagement/index.vue')
   },
   {
+    path: '/userDetail/:id',
+    name: 'UserDetail',
+    component: () => import('@/view/memberManagement/userDetail.vue')
+  },
+  {
     path: '/albumDetail/:id',
     name: 'AlbumDetail',
     component: () => import('@/view/albumDetail/index.vue')

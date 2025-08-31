@@ -77,6 +77,7 @@
 
                     <el-table-column label="操作" :min-width="appStore.operateMinWith" fixed="right">
                         <template #default="scope">
+                            <el-button type="primary" link icon="view" @click="viewUserDetail(scope.row)">查看详情</el-button>
                             <el-button type="primary" link icon="delete" v-if="userStore.userInfo.ID !== scope.row.ID"
                                 @click="deleteUserFunc(scope.row)">删除</el-button>
                             <el-button type="primary" link icon="edit" v-if="userStore.userInfo.ID !== scope.row.ID" @click="openEdit(scope.row)">编辑</el-button>
@@ -196,8 +197,10 @@ import SelectImage from '@/components/selectImage/selectImage.vue'
 import { useAppStore } from "@/pinia";
 import AppSidebar from '@/components/AppSidebar.vue'
 import { useUserStore } from '@/pinia/modules/user'
+import { useRouter } from 'vue-router'
 
 const userStore = useUserStore()
+const router = useRouter()
 
 defineOptions({
     name: 'User'
@@ -532,6 +535,11 @@ const switchEnable = async (row) => {
         userInfo.value.headerImg = ''
         userInfo.value.authorityIds = []
     }
+}
+
+// 查看用户详情
+const viewUserDetail = (row) => {
+    router.push(`/userDetail/${row.ID}`)
 }
 </script>
 
