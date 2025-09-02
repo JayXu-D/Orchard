@@ -14,6 +14,7 @@ import (
 	"github.com/flipped-aurora/gin-vue-admin/server/model/system/request"
 	systemRes "github.com/flipped-aurora/gin-vue-admin/server/model/system/response"
 	"github.com/flipped-aurora/gin-vue-admin/server/utils/watermark"
+	"github.com/google/uuid"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
@@ -304,7 +305,7 @@ func (drawingService *DrawingService) UpdateEmptyDrawings() error {
 }
 
 // DownloadDrawing 下载图纸
-func (drawingService *DrawingService) DownloadDrawing(req request.DownloadDrawing) (*systemRes.DownloadResponse, error) {
+func (drawingService *DrawingService) DownloadDrawing(req request.DownloadDrawing, userUUID uuid.UUID) (*systemRes.DownloadResponse, error) {
 	// 获取图纸信息
 	var drawing system.SysDrawing
 	err := global.GVA_DB.First(&drawing, req.DrawingID).Error
@@ -320,6 +321,14 @@ func (drawingService *DrawingService) DownloadDrawing(req request.DownloadDrawin
 
 	// 检查权限（这里可以添加更复杂的权限检查逻辑）
 	// TODO: 实现权限检查
+
+	// 记录下载历史
+	downloadHistoryService := &DownloadHistoryService{}
+	err = downloadHistoryService.RecordDownload(userUUID, req.DrawingID, req.AlbumID)
+	if err != nil {
+		global.GVA_LOG.Warn("记录下载历史失败", zap.Error(err))
+		// 不因为记录失败而阻止下载
+	}
 
 	// 解析图纸文件URLs
 	var drawingURLs []string
@@ -436,7 +445,7 @@ func (drawingService *DrawingService) DownloadDrawing(req request.DownloadDrawin
 }
 
 // BatchDownloadDrawings 批量下载图纸
-func (drawingService *DrawingService) BatchDownloadDrawings(req request.BatchDownloadDrawings) (*systemRes.DownloadResponse, error) {
+func (drawingService *DrawingService) BatchDownloadDrawings(req request.BatchDownloadDrawings, userUUID uuid.UUID) (*systemRes.DownloadResponse, error) {
 	// 获取所有图纸信息
 	var drawings []system.SysDrawing
 	err := global.GVA_DB.Where("id IN ?", req.DrawingIDs).Find(&drawings).Error
@@ -452,6 +461,16 @@ func (drawingService *DrawingService) BatchDownloadDrawings(req request.BatchDow
 
 	// 检查权限（这里可以添加更复杂的权限检查逻辑）
 	// TODO: 实现权限检查
+
+	// 记录批量下载历史
+	downloadHistoryService := &DownloadHistoryService{}
+	for _, drawing := range drawings {
+		err = downloadHistoryService.RecordDownload(userUUID, drawing.ID, req.AlbumID)
+		if err != nil {
+			global.GVA_LOG.Warn("记录下载历史失败", zap.Error(err))
+			// 不因为记录失败而阻止下载
+		}
+	}
 
 	// 收集所有图纸文件URLs
 	var allFilePaths []string

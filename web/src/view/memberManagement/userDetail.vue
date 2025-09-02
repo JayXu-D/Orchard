@@ -36,7 +36,7 @@
                         
                         <el-table-column prop="drawingName" label="图纸名称" min-width="300" align="center">
                             <template #default="scope">
-                                <span class="text-gray-700">{{ scope.row.drawingName }}</span>
+                                <span class="text-gray-700">{{ scope.row.name }}</span>
                             </template>
                         </el-table-column>
                         
@@ -120,7 +120,7 @@ const fetchUserDrawings = async (userId) => {
     try {
         const res = await getUserDrawings(userId)
         if (res.code === 0) {
-            drawingsList.value = res.data
+            drawingsList.value = res.data ? res.data : []
         } else {
             ElMessage.error(res.msg || '获取用户图纸列表失败')
         }

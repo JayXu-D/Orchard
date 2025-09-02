@@ -1,0 +1,141 @@
+package system
+
+import (
+	"time"
+
+	"github.com/flipped-aurora/gin-vue-admin/server/global"
+	"github.com/flipped-aurora/gin-vue-admin/server/model/system"
+	"github.com/google/uuid"
+	"go.uber.org/zap"
+)
+
+type DownloadHistoryService struct{}
+
+// RecordDownload 记录下载历史
+func (s *DownloadHistoryService) RecordDownload(userUUID uuid.UUID, drawingID, albumID uint) error {
+	history := &system.SysDownloadHistory{
+		UserUUID:   userUUID,
+		DrawingID:  drawingID,
+		AlbumID:    albumID,
+		DownloadAt: time.Now().Unix(),
+	}
+
+	err := global.GVA_DB.Create(history).Error
+	if err != nil {
+		global.GVA_LOG.Error("记录下载历史失败", zap.Error(err))
+		return err
+	}
+
+	return nil
+}
+
+// GetUserDrawingDownloadHistory 获取用户图纸下载历史
+func (s *DownloadHistoryService) GetUserDrawingDownloadHistory(userUUID uuid.UUID, drawingID uint) (*system.SysDownloadHistory, error) {
+	var history system.SysDownloadHistory
+	err := global.GVA_DB.Where("user_uuid = ? AND drawing_id = ?", userUUID, drawingID).
+		Order("download_at DESC").
+		First(&history).Error
+	if err != nil {
+		return nil, err
+	}
+	return &history, nil
+}
+
+// GetUserDrawingsWithDownloadInfo 获取用户图纸列表（包含下载信息）
+func (s *DownloadHistoryService) GetUserDrawingsWithDownloadInfo(userUUID uuid.UUID) ([]map[string]interface{}, error) {
+	results := make([]map[string]interface{}, 0)
+
+	// 查询用户有权限下载的图纸，并获取下载历史（使用子查询聚合，避免 DISTINCT/ORDER BY 冲突）
+	query := `
+		SELECT
+			d.id,
+			d.serial_number,
+			d.name,
+			d.album_id,
+			a.title AS album_title,
+			ldt.last_download_time,
+			fdt.first_download_time,
+			d.created_at AS created_at
+		FROM sys_drawings d
+		LEFT JOIN sys_albums a ON d.album_id = a.id
+		LEFT JOIN (
+			SELECT drawing_id, MAX(download_at) AS last_download_time
+			FROM sys_download_histories
+			WHERE user_uuid = ?
+			GROUP BY drawing_id
+		) ldt ON ldt.drawing_id = d.id
+		LEFT JOIN (
+			SELECT drawing_id, MIN(created_at) AS first_download_time
+			FROM sys_download_histories
+			WHERE user_uuid = ?
+			GROUP BY drawing_id
+		) fdt ON fdt.drawing_id = d.id
+		WHERE d.creator_uuid = ?
+		   OR JSON_CONTAINS(d.allowed_members, ?)
+		   OR EXISTS (
+			   SELECT 1 FROM sys_album_admin aa
+			   WHERE aa.album_id = d.album_id
+			   AND aa.user_id = (SELECT id FROM sys_users WHERE uuid = ?)
+		   )
+		ORDER BY d.created_at DESC
+	`
+
+	rows, err := global.GVA_DB.Raw(
+		query,
+		userUUID.String(),           // ldt.user_uuid = ?
+		userUUID.String(),           // fdt.user_uuid = ?
+		userUUID.String(),           // d.creator_uuid = ?
+		"\""+userUUID.String()+"\"", // JSON_CONTAINS(..., ?)
+		userUUID.String(),           // sys_users.uuid = ?
+	).Rows()
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var result map[string]interface{}
+		var id uint
+		var serialNumber, name string
+		var albumID uint
+		var albumTitle string
+		var lastDownloadTime, firstDownloadTime *int64
+		var createdAt time.Time
+
+		err := rows.Scan(&id, &serialNumber, &name, &albumID, &albumTitle,
+			&lastDownloadTime, &firstDownloadTime, &createdAt)
+		if err != nil {
+			continue
+		}
+
+		// 获取时间信息
+		var acquisitionTime, lastDownloadTimeStr string
+
+		// 获取时间（第一次下载时间或图纸创建时间）
+		if firstDownloadTime != nil {
+			acquisitionTime = time.Unix(*firstDownloadTime, 0).Format("2006-01-02T15:04:05Z")
+		} else {
+			// 如果没有下载记录，使用图纸创建时间（直接使用已查询的 createdAt）
+			acquisitionTime = createdAt.Format("2006-01-02T15:04:05Z")
+		}
+
+		// 最后一次下载时间
+		if lastDownloadTime != nil {
+			lastDownloadTimeStr = time.Unix(*lastDownloadTime, 0).Format("2006-01-02T15:04:05Z")
+		}
+
+		result = map[string]interface{}{
+			"id":               id,
+			"serialNumber":     serialNumber,
+			"name":             name,
+			"albumId":          albumID,
+			"albumTitle":       albumTitle,
+			"acquisitionTime":  acquisitionTime,
+			"lastDownloadTime": lastDownloadTimeStr,
+		}
+
+		results = append(results, result)
+	}
+
+	return results, nil
+}

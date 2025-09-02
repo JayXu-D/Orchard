@@ -9,7 +9,9 @@ import (
 	"github.com/flipped-aurora/gin-vue-admin/server/model/common/response"
 	"github.com/flipped-aurora/gin-vue-admin/server/model/system/request"
 	systemRes "github.com/flipped-aurora/gin-vue-admin/server/model/system/response"
+	"github.com/flipped-aurora/gin-vue-admin/server/utils"
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"go.uber.org/zap"
 )
 
@@ -170,7 +172,14 @@ func (drawingApi *DrawingApi) DownloadDrawing(c *gin.Context) {
 		return
 	}
 
-	downloadResponse, err := drawingService.DownloadDrawing(downloadReq)
+	// 从JWT中获取用户UUID
+	userUUID := utils.GetUserUuid(c)
+	if userUUID == uuid.Nil {
+		response.FailWithMessage("用户身份验证失败", c)
+		return
+	}
+
+	downloadResponse, err := drawingService.DownloadDrawing(downloadReq, userUUID)
 	if err != nil {
 		global.GVA_LOG.Error("下载图纸失败!", zap.Error(err))
 		response.FailWithMessage("下载图纸失败", c)
@@ -197,7 +206,14 @@ func (drawingApi *DrawingApi) BatchDownloadDrawings(c *gin.Context) {
 		return
 	}
 
-	downloadResponse, err := drawingService.BatchDownloadDrawings(batchDownloadReq)
+	// 从JWT中获取用户UUID
+	userUUID := utils.GetUserUuid(c)
+	if userUUID == uuid.Nil {
+		response.FailWithMessage("用户身份验证失败", c)
+		return
+	}
+
+	downloadResponse, err := drawingService.BatchDownloadDrawings(batchDownloadReq, userUUID)
 	if err != nil {
 		global.GVA_LOG.Error("批量下载图纸失败!", zap.Error(err))
 		response.FailWithMessage("批量下载图纸失败", c)
