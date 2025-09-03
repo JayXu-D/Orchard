@@ -171,3 +171,6 @@ server {
                  }
                 }
         }
+
+        启动服务
+        nohup ./server > service.log 2>&1 &

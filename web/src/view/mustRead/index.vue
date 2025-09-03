@@ -53,24 +53,6 @@
                   @onCreated="handleCreated"
                 />
               </div>
-              <!-- 自定义图片上传按钮 -->
-              <div class="mt-2 flex items-center space-x-2">
-                <input
-                  ref="imageInput"
-                  type="file"
-                  accept="image/*"
-                  style="display: none"
-                  @change="handleImageUpload"
-                />
-                <el-button 
-                  size="small" 
-                  @click="imageInput.click()"
-                  icon="Picture"
-                >
-                  插入图片
-                </el-button>
-                <span class="text-sm text-gray-500">支持 JPG、PNG、GIF 格式，最大 10MB</span>
-              </div>
             </div>
             
             <!-- 操作按钮 -->
@@ -406,16 +388,20 @@ onBeforeUnmount(() => {
   margin-bottom: 1em;
 }
 
-.prose ul, .prose ol {
-  margin-bottom: 1em;
-  padding-left: 1.5em;
-}
-
-.prose li {
-  margin-bottom: 0.5em;
-}
+.prose ul { list-style: disc; padding-left: 1.5em; }
+.prose ol { list-style: decimal; padding-left: 1.5em; }
+.prose li { list-style: inherit; }
 
 .prose strong {
   font-weight: 600;
 }
+
+/* v-html 渲染的内容不会带 scoped 特性，使用 deep 使样式生效 */
+::v-deep(.prose) ul { list-style: disc; padding-left: 1.5em; }
+::v-deep(.prose) ol { list-style: decimal; padding-left: 1.5em; }
+::v-deep(.prose) li { list-style: inherit; }
+
+/* 编辑器内部内容（wangeditor）列表样式 */
+::v-deep(.w-e-text) ul { list-style: disc; padding-left: 1.5em; }
+::v-deep(.w-e-text) ol { list-style: decimal; padding-left: 1.5em; }
 </style>
