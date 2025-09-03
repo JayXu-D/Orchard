@@ -335,7 +335,7 @@ const downloadDrawing = async (drawing) => {
       drawingId: drawing.id,
       albumId: Number(albumId.value),
       addWatermark: true, // 默认添加水印
-      watermarkText: `创建者: ${drawing.creator?.username || '未知'}`
+      watermarkText: `author: ${drawing.creator?.uuid || ''}`
     })
     
     if (result.code === 0) {
