@@ -29,9 +29,30 @@
                 </el-form>
             </div>
             <div class="gva-table-box">
-                <div class="gva-btn-list">
-                    <el-button type="primary" icon="plus" @click="addUser">新增用户</el-button>
+                <!-- 快速注册：仅输入账号 一键创建普通用户 -->
+                <div class="flex flex-col items-start gap-2 mb-4">
+                    <div class="text-sm text-gray-600">新成员注册</div>
+                    <div class="flex items-center gap-4">
+                        <input
+                            v-model="quickUserName"
+                            type="text"
+                            placeholder="输入账号"
+                            class="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 w-80"
+                        />
+                        <button
+                            @click="quickRegister"
+                            :disabled="!quickUserName || isQuickRegistering"
+                            class="px-6 py-2 rounded-md text-white transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
+                            :class="isQuickRegistering ? 'bg-gray-400' : 'bg-[#C08C90] hover:brightness-95'"
+                        >
+                            确定
+                        </button>
+                        <div v-if="quickRegisterMsg" class="text-gray-500 text-sm">{{ quickRegisterMsg }}</div>
+                    </div>
                 </div>
+                <!-- <div class="gva-btn-list">
+                    <el-button type="primary" icon="plus" @click="addUser">新增用户</el-button>
+                </div> -->
                 <el-table :data="tableData" row-key="ID">
                     <el-table-column align="left" label="头像" min-width="75">
                         <template #default="scope">
@@ -208,6 +229,41 @@ defineOptions({
 
 const appStore = useAppStore()
 const activeMenu = ref('member')
+
+// 快速注册（仅账号）
+const quickUserName = ref('')
+const quickRegisterMsg = ref('')
+const isQuickRegistering = ref(false)
+const quickRegister = async () => {
+    if (!quickUserName.value) return
+    if (isQuickRegistering.value) return
+    isQuickRegistering.value = true
+    quickRegisterMsg.value = ''
+    try {
+        // 默认配置：密码123456，昵称同用户名，启用，角色固定为普通用户ID 9528
+        const NORMAL_ROLE_ID = 9528
+
+        const req = {
+            userName: quickUserName.value,
+            password: '123456',
+            nickName: quickUserName.value,
+            enable: 1,
+            authorityId: NORMAL_ROLE_ID
+        }
+        const res = await register(req)
+        if (res.code === 0) {
+            quickRegisterMsg.value = `${quickUserName.value} 注册成功`
+            quickUserName.value = ''
+            await getTableData()
+        } else {
+            quickRegisterMsg.value = res.msg || '注册失败'
+        }
+    } catch (e) {
+        quickRegisterMsg.value = e.message || '注册失败'
+    } finally {
+        isQuickRegistering.value = false
+    }
+}
 
 const searchInfo = ref({
     username: '',
