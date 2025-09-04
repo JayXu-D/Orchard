@@ -147,10 +147,13 @@
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ drawing.albumName || '-' }}</td>
                 <td class="px-6 py-4 whitespace-nowrap">
                   <button @click="downloadDrawing(drawing)" :disabled="!drawing.canDownload"
-                    class="px-3 py-1 text-sm rounded transition-colors" :class="drawing.downloaded
-                      ? 'bg-gray-300 text-gray-600 cursor-not-allowed'
-                      : 'bg-red-500 text-white hover:bg-red-600'">
-                    {{ drawing.downloaded ? '重新下载' : '下载图纸' }}
+                    class="px-3 py-1 text-sm rounded transition-colors"
+                    :class="!drawing.canDownload
+                      ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                      : (drawing.downloaded
+                        ? 'bg-[#9BC879] text-white hover:bg-[#8BBF67]'
+                        : 'bg-red-500 text-white hover:bg-red-600')">
+                    {{ !drawing.canDownload ? '暂无权限' : (drawing.downloaded ? '重新下载' : '下载图纸') }}
                   </button>
                 </td>
               </tr>
@@ -216,7 +219,7 @@ import { useUserStore } from '@/pinia/modules/user'
 import { ElMessage } from 'element-plus'
 import AppSidebar from '@/components/AppSidebar.vue'
 // import ImagePreviewDialog from '@/components/ImagePreviewDialog.vue'
-import { getMyDrawings, downloadDrawing as downloadDrawingApi, batchDownloadDrawings } from '@/api/album'
+import { getMyDrawings, downloadDrawing as downloadDrawingApi, batchDownloadDrawings, recordDownload, getDownloadStatus } from '@/api/album'
 import { getBaseUrl } from '@/utils/format'
 
 // 防抖函数
@@ -328,6 +331,12 @@ const batchDownload = async () => {
     
     if (result.code === 0) {
       ElMessage.success(`成功下载 ${selectedDrawings.value.length} 个图纸`)
+      // 异步记录下载点击（不阻塞）
+      try {
+        await Promise.allSettled(selectedDrawings.value.map(id => recordDownload({ drawingId: id, albumId: drawings.value.find(d=>d.id===id)?.albumId })))
+      } catch (e) {
+        console.warn('批量记录下载失败', e)
+      }
       
       // 标记所有选中的图纸为已下载
       selectedDrawings.value.forEach(drawingId => {
@@ -372,12 +381,18 @@ const downloadDrawing = async (drawing) => {
   if (!drawing.canDownload) return
   
   try {
+    // 先记录下载点击
+    try {
+      await recordDownload({ drawingId: drawing.id, albumId: drawing.albumId })
+    } catch (e) {
+      console.warn('记录下载失败（不影响继续下载）', e)
+    }
     // 调用下载接口
     const result = await downloadDrawingApi({
       drawingId: drawing.id,
       albumId: drawing.albumId,
       addWatermark: true,
-      watermarkText: `创建者: ${drawing.creator?.username || '未知'}`
+      watermarkText: `author: ${drawing.creator?.uuid || ''}`
     })
     
     if (result.code === 0) {
@@ -438,8 +453,30 @@ const refreshData = async () => {
         posterImage: getBaseUrl() + (d.posterImageURL || ''),
         canDownload: true,
         downloaded: d.downloaded || false,
+        lastDownloadTime: null,
         creator: d.creator || {}
       }))
+      // 拉取下载状态
+      const ids = drawings.value.map(d => d.id)
+      if (ids.length > 0) {
+        try {
+          const statusRes = await getDownloadStatus({ drawingIds: ids })
+          if (statusRes.code === 0 && statusRes.data) {
+            const statusMap = statusRes.data
+            console.log('下载状态:', statusMap)
+            drawings.value.forEach(d => {
+              const t = statusMap[d.id]
+              if (t) {
+                d.downloaded = true
+                d.lastDownloadTime = t
+              }
+            })
+            console.log('处理后的图纸列表:', drawings.value)
+          }
+        } catch (e) {
+          console.warn('获取下载状态失败', e)
+        }
+      }
     } else {
       drawings.value = []
     }
@@ -474,8 +511,30 @@ const fetchMyDrawings = async () => {
         posterImage: getBaseUrl() + (d.posterImageURL || ''),
         canDownload: true,
         downloaded: d.downloaded || false,
+        lastDownloadTime: null,
         creator: d.creator || {}
       }))
+      // 拉取下载状态
+      const ids = drawings.value.map(d => d.id)
+      if (ids.length > 0) {
+        try {
+          const statusRes = await getDownloadStatus({ drawingIds: ids })
+          if (statusRes.code === 0 && statusRes.data) {
+            const statusMap = statusRes.data
+            console.log('下载状态:', statusMap)
+            drawings.value.forEach(d => {
+              const t = statusMap[d.id]
+              if (t) {
+                d.downloaded = true
+                d.lastDownloadTime = t
+              }
+            })
+            console.log('处理后的图纸列表:', drawings.value)
+          }
+        } catch (e) {
+          console.warn('获取下载状态失败', e)
+        }
+      }
       console.log('成功获取我的图纸列表:', drawings.value.length)
     } else {
       drawings.value = []

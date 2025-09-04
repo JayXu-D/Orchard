@@ -482,13 +482,11 @@ func (drawingService *DrawingService) BatchDownloadDrawings(req request.BatchDow
 	var allFilePaths []string
 	if req.AddWatermark {
 		watermarkService := watermark.NewWatermarkService()
-		watermarkText := req.WatermarkText
-		if watermarkText == "" {
-			watermarkText = "批量下载图纸"
-		}
+		var watermarkText string
 
 		for _, drawing := range drawings {
-			// 添加调试日志
+			watermarkText = "author: " + drawing.CreatorUUID.String()
+			// 添加调试日志	
 			global.GVA_LOG.Info("处理图纸",
 				zap.Uint("drawing_id", drawing.ID),
 				zap.String("drawing_name", drawing.Name),
