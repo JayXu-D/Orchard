@@ -322,55 +322,72 @@ const batchDownload = async () => {
   if (selectedDrawings.value.length === 0) return
 
   try {
-    // 调用批量下载接口
-    const result = await batchDownloadDrawings({
-      drawingIds: selectedDrawings.value,
-      addWatermark: true,
-      watermarkText: '批量下载图纸'
-    })
-    
-    if (result.code === 0) {
-      ElMessage.success(`成功下载 ${selectedDrawings.value.length} 个图纸`)
-      // 异步记录下载点击（不阻塞）
+    // 将选中的图纸按相册分组，逐相册调用批量下载（API要求 albumId 必填）
+    const groupByAlbum = selectedDrawings.value.reduce((acc, id) => {
+      const d = drawings.value.find(x => x.id === id)
+      if (!d) return acc
+      const key = Number(d.albumId)
+      if (!acc[key]) acc[key] = []
+      acc[key].push(id)
+      return acc
+    }, {})
+
+    const albumIds = Object.keys(groupByAlbum)
+    let totalFiles = 0
+
+    for (const albumIdStr of albumIds) {
+      const albumId = Number(albumIdStr)
+      const ids = groupByAlbum[albumId]
+
+      const result = await batchDownloadDrawings({
+        drawingIds: ids,
+        albumId,
+        addWatermark: true,
+        watermarkText: '批量下载图纸'
+      })
+
+      if (result.code !== 0) {
+        ElMessage.error(`相册 ${albumId} 批量下载失败: ${result.msg || '未知错误'}`)
+        continue
+      }
+
+      // 记录下载点击（不阻塞）
       try {
-        await Promise.allSettled(selectedDrawings.value.map(id => recordDownload({ drawingId: id, albumId: drawings.value.find(d=>d.id===id)?.albumId })))
+        await Promise.allSettled(ids.map(id => recordDownload({ drawingId: id, albumId })))
       } catch (e) {
         console.warn('批量记录下载失败', e)
       }
-      
-      // 标记所有选中的图纸为已下载
-      selectedDrawings.value.forEach(drawingId => {
-        const drawing = drawings.value.find(d => d.id === drawingId)
-        if (drawing) {
-          drawing.downloaded = true
-        }
+
+      // 标记该分组图纸为已下载
+      ids.forEach(drawingId => {
+        const d = drawings.value.find(x => x.id === drawingId)
+        if (d) d.downloaded = true
       })
-      
-      // 清空选择
-      selectedDrawings.value = []
-      
-      // 如果返回了文件路径列表，触发浏览器下载
+
+      // 触发浏览器下载
       if (result.data && result.data.filePaths && result.data.filePaths.length > 0) {
+        totalFiles += result.data.filePaths.length
         result.data.filePaths.forEach((filePath, index) => {
           const downloadUrl = filePath.startsWith('/') ? filePath : `/api/v1/drawing/${filePath}`
-          
           const link = document.createElement('a')
           link.href = downloadUrl
           link.download = filePath.split('/').pop()
           link.style.display = 'none'
           document.body.appendChild(link)
-          
           setTimeout(() => {
             link.click()
             document.body.removeChild(link)
           }, index * 100)
         })
-        
-        ElMessage.success(`批量下载成功，共 ${result.data.filePaths.length} 个文件`)
       }
-    } else {
-      ElMessage.error('批量下载失败: ' + (result.msg || '未知错误'))
     }
+
+    if (albumIds.length > 0) {
+      ElMessage.success(`批量下载完成，涉及 ${albumIds.length} 个相册，共 ${totalFiles} 个文件`)
+    }
+
+    // 清空选择
+    selectedDrawings.value = []
   } catch (error) {
     console.error('批量下载失败:', error)
     ElMessage.error('批量下载失败: ' + error.message)
