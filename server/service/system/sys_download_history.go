@@ -139,3 +139,30 @@ func (s *DownloadHistoryService) GetUserDrawingsWithDownloadInfo(userUUID uuid.U
 
 	return results, nil
 }
+
+// GetDownloadStatus 获取指定图纸ID列表的最新下载时间（按用户）
+func (s *DownloadHistoryService) GetDownloadStatus(userUUID uuid.UUID, drawingIDs []uint) (map[uint]int64, error) {
+	if len(drawingIDs) == 0 {
+		return map[uint]int64{}, nil
+	}
+	type row struct {
+		DrawingID uint
+		LastTime  *int64
+	}
+	var rows []row
+	err := global.GVA_DB.Table("sys_download_histories").
+		Select("drawing_id as drawing_id, MAX(download_at) as last_time").
+		Where("user_uuid = ? AND drawing_id IN ?", userUUID, drawingIDs).
+		Group("drawing_id").
+		Scan(&rows).Error
+	if err != nil {
+		return nil, err
+	}
+	result := make(map[uint]int64, len(rows))
+	for _, r := range rows {
+		if r.LastTime != nil {
+			result[r.DrawingID] = *r.LastTime
+		}
+	}
+	return result, nil
+}

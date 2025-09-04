@@ -88,6 +88,24 @@ export const batchDownloadDrawings = (data) => {
   })
 }
 
+// 记录下载点击
+export const recordDownload = (data) => {
+  return service({
+    url: '/drawing/recordDownload',
+    method: 'post',
+    data
+  })
+}
+
+// 批量获取下载状态
+export const getDownloadStatus = (data) => {
+  return service({
+    url: '/drawing/downloadStatus',
+    method: 'post',
+    data
+  })
+}
+
 // 创建图纸
 export const createDrawing = (data) => {
   return service({

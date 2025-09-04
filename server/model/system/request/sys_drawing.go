@@ -71,3 +71,14 @@ type BatchDownloadDrawings struct {
 	AddWatermark  bool   `json:"addWatermark"`                  // 是否添加水印
 	WatermarkText string `json:"watermarkText"`                 // 水印文字
 }
+
+// RecordDownload 记录下载请求
+type RecordDownload struct {
+	DrawingID uint `json:"drawingId" binding:"required"` // 图纸ID
+	AlbumID   uint `json:"albumId" binding:"required"`   // 相册ID
+}
+
+// DownloadStatusRequest 批量查询下载状态
+type DownloadStatusRequest struct {
+	DrawingIDs []uint `json:"drawingIds" binding:"required"`
+}

@@ -110,7 +110,7 @@
                     :class="!drawing.canDownload
                       ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
                       : (drawing.downloaded
-                        ? 'bg-gray-300 text-gray-600 cursor-not-allowed'
+                        ? 'bg-[#9BC879] text-white hover:bg-[#8BBF67]'
                         : 'bg-red-500 text-white hover:bg-red-600')">
                     {{ !drawing.canDownload ? '暂无权限' : (drawing.downloaded ? '重新下载' : '下载图纸') }}
                   </button>
@@ -156,7 +156,7 @@ import UploadDrawingDialog from './components/UploadDrawingDialog.vue'
 import AddPermissionDialog from './components/AddPermissionDialog.vue'
 import DrawingSettingsDialog from './components/DrawingSettingsDialog.vue'
 import ImagePreviewDialog from './components/ImagePreviewDialog.vue'
-import { getAlbumDetail, getDrawingList, downloadDrawing as downloadDrawingApi, batchDownloadDrawings, createDrawing, updateDrawing } from '@/api/album'
+import { getAlbumDetail, getDrawingList, downloadDrawing as downloadDrawingApi, batchDownloadDrawings, createDrawing, updateDrawing, recordDownload, getDownloadStatus } from '@/api/album'
 import { getBaseUrl } from '@/utils/format'
 import { uploadFile } from '@/api/fileUploadAndDownload'
 
@@ -279,6 +279,12 @@ const batchDownload = async () => {
     
     if (result.code === 0) {
       ElMessage.success(`成功下载 ${selectedDrawings.value.length} 个图纸`)
+      // 异步记录下载点击（不阻塞）
+      try {
+        await Promise.allSettled(selectedDrawings.value.map(id => recordDownload({ drawingId: id, albumId: Number(albumId.value) })))
+      } catch (e) {
+        console.warn('批量记录下载失败', e)
+      }
       
       // 标记所有选中的图纸为已下载
       selectedDrawings.value.forEach(drawingId => {
@@ -330,6 +336,13 @@ const downloadDrawing = async (drawing) => {
     console.log('下载图纸:', drawing.id)
     console.log('相册ID:', albumId.value)
     
+    // 先记录下载点击
+    try {
+      await recordDownload({ drawingId: drawing.id, albumId: Number(albumId.value) })
+    } catch (e) {
+      console.warn('记录下载失败（不影响继续下载）', e)
+    }
+
     // 调用下载接口，下载该图纸下的所有图纸文件
     const result = await downloadDrawingApi({
       drawingId: drawing.id,
@@ -642,9 +655,30 @@ const fetchDrawings = async () => {
         allowedMembers: (d.allowedMemberUUIDs || []).map(uuid => ({ uuid: uuid.toString() })),
         canDownload: d.creatorUUID === userStore.userInfo.uuid || d.allowedMemberUUIDs.includes(userStore.userInfo.uuid),
         canEdit: d.creatorUUID === userStore.userInfo.uuid, // 只有上传者可以编辑
-        downloaded: false // TODO: 根据实际下载状态判断
+        downloaded: false,
+        lastDownloadTime: null
       }))
       console.log('处理后的图纸数据:', drawings.value)
+
+      // 拉取真实下载状态
+      const ids = drawings.value.map(d => d.id)
+      if (ids.length > 0) {
+        try {
+          const statusRes = await getDownloadStatus({ drawingIds: ids })
+          if (statusRes.code === 0 && statusRes.data) {
+            const statusMap = statusRes.data
+            drawings.value.forEach(d => {
+              const t = statusMap[d.id]
+              if (t) {
+                d.downloaded = true
+                d.lastDownloadTime = t
+              }
+            })
+          }
+        } catch (e) {
+          console.warn('获取下载状态失败', e)
+        }
+      }
     } else {
       // 如果API调用失败，设置空数组
       drawings.value = []

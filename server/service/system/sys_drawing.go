@@ -444,6 +444,12 @@ func (drawingService *DrawingService) DownloadDrawing(req request.DownloadDrawin
 	}, nil
 }
 
+// RecordDownload 点击下载时记录下载历史（不返回文件）
+func (drawingService *DrawingService) RecordDownload(req request.RecordDownload, userUUID uuid.UUID) error {
+	downloadHistoryService := &DownloadHistoryService{}
+	return downloadHistoryService.RecordDownload(userUUID, req.DrawingID, req.AlbumID)
+}
+
 // BatchDownloadDrawings 批量下载图纸
 func (drawingService *DrawingService) BatchDownloadDrawings(req request.BatchDownloadDrawings, userUUID uuid.UUID) (*systemRes.DownloadResponse, error) {
 	// 获取所有图纸信息

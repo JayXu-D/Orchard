@@ -9,6 +9,7 @@ import (
 	"github.com/flipped-aurora/gin-vue-admin/server/model/common/response"
 	"github.com/flipped-aurora/gin-vue-admin/server/model/system/request"
 	systemRes "github.com/flipped-aurora/gin-vue-admin/server/model/system/response"
+	systemService "github.com/flipped-aurora/gin-vue-admin/server/service/system"
 	"github.com/flipped-aurora/gin-vue-admin/server/utils"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -221,6 +222,64 @@ func (drawingApi *DrawingApi) BatchDownloadDrawings(c *gin.Context) {
 	}
 
 	response.OkWithData(downloadResponse, c)
+}
+
+// RecordDownload 记录下载点击
+// @Tags Drawing
+// @Summary 记录下载点击
+// @Security ApiKeyAuth
+// @accept application/json
+// @Produce application/json
+// @Param data body request.RecordDownload true "记录下载"
+// @Success 200 {object} response.Response{msg=string} "记录成功"
+// @Router /drawing/recordDownload [post]
+func (drawingApi *DrawingApi) RecordDownload(c *gin.Context) {
+	var recordReq request.RecordDownload
+	if err := c.ShouldBindJSON(&recordReq); err != nil {
+		response.FailWithMessage(err.Error(), c)
+		return
+	}
+	userUUID := utils.GetUserUuid(c)
+	if userUUID == uuid.Nil {
+		response.FailWithMessage("用户身份验证失败", c)
+		return
+	}
+	if err := drawingService.RecordDownload(recordReq, userUUID); err != nil {
+		global.GVA_LOG.Error("记录下载失败!", zap.Error(err))
+		response.FailWithMessage("记录下载失败", c)
+		return
+	}
+	response.OkWithMessage("记录成功", c)
+}
+
+// DownloadStatus 批量获取下载状态（当前用户）
+// @Tags Drawing
+// @Summary 批量获取下载状态
+// @Security ApiKeyAuth
+// @accept application/json
+// @Produce application/json
+// @Param data body request.DownloadStatusRequest true "查询下载状态"
+// @Success 200 {object} response.Response{data=map[uint]int64,msg=string} "获取成功"
+// @Router /drawing/downloadStatus [post]
+func (drawingApi *DrawingApi) DownloadStatus(c *gin.Context) {
+	var req request.DownloadStatusRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.FailWithMessage(err.Error(), c)
+		return
+	}
+	userUUID := utils.GetUserUuid(c)
+	if userUUID == uuid.Nil {
+		response.FailWithMessage("用户身份验证失败", c)
+		return
+	}
+	svc := &systemService.DownloadHistoryService{}
+	data, err := svc.GetDownloadStatus(userUUID, req.DrawingIDs)
+	if err != nil {
+		global.GVA_LOG.Error("获取下载状态失败!", zap.Error(err))
+		response.FailWithMessage("获取下载状态失败", c)
+		return
+	}
+	response.OkWithData(data, c)
 }
 
 // GetWatermarkFile 获取水印文件
