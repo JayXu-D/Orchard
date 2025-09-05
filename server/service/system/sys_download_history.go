@@ -45,7 +45,19 @@ func (s *DownloadHistoryService) GetUserDrawingDownloadHistory(userUUID uuid.UUI
 func (s *DownloadHistoryService) GetUserDrawingsWithDownloadInfo(userUUID uuid.UUID) ([]map[string]interface{}, error) {
 	results := make([]map[string]interface{}, 0)
 
-	// 查询用户有权限下载的图纸，并获取下载历史（使用子查询聚合，避免 DISTINCT/ORDER BY 冲突）
+	// 先获取用户ID
+	var user system.SysUser
+	err := global.GVA_DB.Where("uuid = ?", userUUID).First(&user).Error
+	if err != nil {
+		global.GVA_LOG.Error("获取用户信息失败", zap.Error(err))
+		return results, err
+	}
+
+	global.GVA_LOG.Info("查询用户图纸列表",
+		zap.String("userUUID", userUUID.String()),
+		zap.Uint("userID", user.ID))
+
+	// 简化查询：先获取所有图纸，然后过滤权限
 	query := `
 		SELECT
 			d.id,
@@ -65,7 +77,7 @@ func (s *DownloadHistoryService) GetUserDrawingsWithDownloadInfo(userUUID uuid.U
 			GROUP BY drawing_id
 		) ldt ON ldt.drawing_id = d.id
 		LEFT JOIN (
-			SELECT drawing_id, MIN(created_at) AS first_download_time
+			SELECT drawing_id, MIN(download_at) AS first_download_time
 			FROM sys_download_histories
 			WHERE user_uuid = ?
 			GROUP BY drawing_id
@@ -75,7 +87,7 @@ func (s *DownloadHistoryService) GetUserDrawingsWithDownloadInfo(userUUID uuid.U
 		   OR EXISTS (
 			   SELECT 1 FROM sys_album_admin aa
 			   WHERE aa.album_id = d.album_id
-			   AND aa.user_id = (SELECT id FROM sys_users WHERE uuid = ?)
+			   AND aa.user_id = ?
 		   )
 		ORDER BY d.created_at DESC
 	`
@@ -86,13 +98,15 @@ func (s *DownloadHistoryService) GetUserDrawingsWithDownloadInfo(userUUID uuid.U
 		userUUID.String(),           // fdt.user_uuid = ?
 		userUUID.String(),           // d.creator_uuid = ?
 		"\""+userUUID.String()+"\"", // JSON_CONTAINS(..., ?)
-		userUUID.String(),           // sys_users.uuid = ?
+		user.ID,                     // aa.user_id = ?
 	).Rows()
 	if err != nil {
+		global.GVA_LOG.Error("执行查询失败", zap.Error(err))
 		return nil, err
 	}
 	defer rows.Close()
 
+	count := 0
 	for rows.Next() {
 		var result map[string]interface{}
 		var id uint
@@ -105,6 +119,7 @@ func (s *DownloadHistoryService) GetUserDrawingsWithDownloadInfo(userUUID uuid.U
 		err := rows.Scan(&id, &serialNumber, &name, &albumID, &albumTitle,
 			&lastDownloadTime, &firstDownloadTime, &createdAt)
 		if err != nil {
+			global.GVA_LOG.Error("扫描行数据失败", zap.Error(err))
 			continue
 		}
 
@@ -135,7 +150,13 @@ func (s *DownloadHistoryService) GetUserDrawingsWithDownloadInfo(userUUID uuid.U
 		}
 
 		results = append(results, result)
+		count++
 	}
+
+	global.GVA_LOG.Info("查询结果",
+		zap.String("userUUID", userUUID.String()),
+		zap.Int("resultCount", count),
+		zap.Int("totalResults", len(results)))
 
 	return results, nil
 }

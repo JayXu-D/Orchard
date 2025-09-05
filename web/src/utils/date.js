@@ -40,5 +40,5 @@ export function formatTimeToStr(times, pattern) {
   if (pattern) {
     d = new Date(times).Format(pattern)
   }
-  return d.toLocaleString()
+  return d // 直接返回格式化后的字符串，不进行时区转换
 }
