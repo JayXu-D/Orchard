@@ -12,10 +12,10 @@
         <div class="min-w-0">
           <!-- 标题和按钮 -->
           <div class="flex items-center justify-between mb-8">
-            <h1 class="text-2xl font-semibold text-gray-900">所有相册</h1>
+            <h1 class="text-2xl" style="color: #CA898F; font-weight: 400;">所有相册</h1>
             <button 
               @click="showCreateDialog = true"
-              class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+              class="px-4 py-2 bg-white text-[#CA898F] border border-[#CA898F] rounded-lg hover:bg-[#CA898F] hover:text-white transition-colors"
             >
               新建相册
             </button>

@@ -2,7 +2,7 @@
   <div id="userLayout" class="w-full h-full relative" style="background-color: #F6EEEE;">
     <div class="w-full h-full flex items-center justify-center p-4">
              <!-- 白色卡片容器 -->
-       <div class="bg-white rounded-lg shadow-lg p-8" style="width: 100%; max-width: 541px;">
+       <div class="bg-white rounded-lg p-8" style="width: 100%; max-width: 541px; box-shadow: 0 4px 24px 0 rgba(202, 137, 143, 0.2);">
                  <!-- 标题区域 -->
          <div class="text-left mb-8">
            <h1 class="text-[30px] font-medium text-gray-800 mb-2">悠闲果园</h1>

@@ -87,9 +87,15 @@ export const useUserStore = defineStore('user', () => {
         router.addRoute(asyncRouter)
       })
 
-      if(router.currentRoute.value.query.redirect) {
-        await router.replace(router.currentRoute.value.query.redirect)
-        return true
+      // 清除redirect参数，避免重定向到退出前的页面
+      const currentRoute = router.currentRoute.value
+      if (currentRoute.query.redirect) {
+        const { redirect, ...queryWithoutRedirect } = currentRoute.query
+        router.replace({ 
+          name: currentRoute.name, 
+          params: currentRoute.params, 
+          query: queryWithoutRedirect 
+        })
       }
 
       if (!router.hasRoute(userInfo.value.authority.defaultRouter)) {

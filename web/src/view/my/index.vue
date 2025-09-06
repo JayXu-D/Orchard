@@ -9,7 +9,7 @@
       <div class="flex-1 overflow-auto py-[30px] px-[48px]">
         <!-- 页面标题 -->
         <div class="flex items-center justify-between mb-8">
-          <h1 class="text-2xl font-semibold text-gray-900">我的图纸</h1>
+          <h1 class="text-2xl" style="color: #CA898F; font-weight: 400;">我的图纸</h1>
 
           <!-- 筛选和搜索 -->
           <div class="flex items-center space-x-4">

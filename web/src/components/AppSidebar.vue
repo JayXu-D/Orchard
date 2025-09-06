@@ -2,7 +2,7 @@
   <div class="w-20 bg-[#CA898F] flex flex-col items-center py-6 rounded-[10px]">
     <!-- Logo -->
     <div
-      class="w-12 h-12 flex items-center justify-center mb-8 cursor-pointer transition-colors hover:bg-[#B87A80] rounded-lg"
+      class="w-12 h-12 flex items-center justify-center mb-8 cursor-pointer transition-colors  rounded-lg"
       @click="handleMenuClick('home')">
       <img src="@/assets/orchard_logo.png" alt="Orchard Logo" class="w-9 h-9" />
     </div>
@@ -13,8 +13,8 @@
         @click="handleMenuClick(item.key)">
         <div class="w-12 h-12 rounded-lg flex items-center justify-center" :class="[
           activeMenu === item.key
-            ? 'bg-[#B87A80]'
-            : 'bg-transparent hover:bg-[#B87A80]'
+            ? 'bg-transparent'
+            : 'bg-transparent'
         ]">
           <img :src="item.icon" :alt="item.label" class="w-9 h-9" />
         </div>
@@ -25,7 +25,7 @@
     <!-- 底部用户图标 -->
     <div class="relative user-menu-container">
       <div
-        class="w-12 h-12 bg-transparent rounded-lg flex items-center justify-center cursor-pointer transition-colors hover:bg-[#B87A80]"
+        class="w-12 h-12 bg-transparent rounded-lg flex items-center justify-center cursor-pointer transition-colors"
         @click="toggleUserMenu">
         <CustomPic :picSrc="userStore.userInfo.headerImg" :picType="'avatar'" :size="30" />
       </div>
@@ -153,6 +153,17 @@ const LoginOut = async () => {
   }
 
   await ClearStorage()
+
+  // 清除当前路由的redirect查询参数
+  const currentRoute = router.currentRoute.value
+  if (currentRoute.query.redirect) {
+    const { redirect, ...queryWithoutRedirect } = currentRoute.query
+    router.replace({ 
+      name: currentRoute.name, 
+      params: currentRoute.params, 
+      query: queryWithoutRedirect 
+    })
+  }
 
   // 把路由定向到登录页，无需等待直接reload
   router.push({ name: 'Login', replace: true })

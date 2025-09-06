@@ -9,7 +9,7 @@
       <div class="flex-1 py-[30px] px-[48px]">
         <!-- 相册标题 -->
         <div class="flex items-center justify-between mb-8">
-          <h1 class="text-2xl font-semibold text-gray-900">{{ albumTitle }}</h1>
+          <h1 style="color: #CA898F; font-weight: 400; font-size: 24px;">{{ albumTitle }}</h1>
 
           <!-- 筛选和搜索 -->
           <div class="flex items-center space-x-4">

@@ -10,7 +10,7 @@
         <div class="flex-1">
           <!-- 标题 -->
           <div class="mb-8">
-            <h1 class="text-[24px] font-semibold text-[#CA898F]">修改密码</h1>
+            <h1 class="text-[24px] font-weight: 400; text-[#CA898F]">修改密码</h1>
           </div>
 
           <!-- 修改密码表单 -->
@@ -62,7 +62,7 @@
               <!-- 确认按钮 -->
               <div>
                 <button type="submit" :disabled="isSubmitting"
-                  class="w-[126px] h-[46px] bg-[#CA898F] text-white rounded-[5px] hover:bg-[#B87A80] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  class="w-[126px] h-[46px] bg-[#C08C90] text-white rounded-[5px] hover:bg-[#B87A80] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   style="padding-right: 31px; padding-left: 31px;">
                   {{ isSubmitting ? '修改中...' : '确认修改' }}
                 </button>
