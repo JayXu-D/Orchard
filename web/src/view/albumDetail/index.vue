@@ -47,10 +47,10 @@
 
           <!-- 操作按钮 -->
           <div v-if="canManage" class="flex justify-end space-x-3 mb-6">
-            <button @click="showAddPermissionDialog = true"
+            <!-- <button @click="showAddPermissionDialog = true"
             class="px-4 py-2 bg-white text-[#CA898F] border border-[#CA898F] rounded-lg hover:bg-[#CA898F] hover:text-white transition-colors">
               添加权限
-            </button>
+            </button> -->
             <button @click="showUploadDialog = true" :disabled="isUploading"
               class="px-4 py-2 bg-white text-[#CA898F] border border-[#CA898F] rounded-lg hover:bg-[#CA898F] hover:text-white transition-colors">
               {{ isUploading ? '上传中...' : '上传新图纸' }}
@@ -171,6 +171,7 @@ const userStore = useUserStore()
 // 响应式数据
 const albumId = ref('')
 const albumTitle = ref('')
+const albumDetail = ref(null) // 存储相册详情数据
 const drawings = ref([])
 const selectedDrawings = ref([])
 const filterStatus = ref('all')
@@ -192,7 +193,30 @@ console.log('相册详情页面初始化，相册ID:', albumId.value, '路由参
 const canManage = computed(() => {
   // 相册创建者或管理员可以管理
   console.log('计算管理权限，相册ID:', albumId.value)
-  return true // TODO: 根据实际权限判断
+  
+  if (!albumDetail.value || !userStore.userInfo.uuid) {
+    return false
+  }
+  
+  const currentUserUUID = userStore.userInfo.uuid
+  
+  // 检查是否为相册创建者
+  if (albumDetail.value.creatorUUID === currentUserUUID) {
+    console.log('当前用户是相册创建者，有管理权限')
+    return true
+  }
+  
+  // 检查是否为相册管理员
+  if (albumDetail.value.adminUsers && Array.isArray(albumDetail.value.adminUsers)) {
+    const isAdmin = albumDetail.value.adminUsers.some(admin => admin.uuid === currentUserUUID)
+    if (isAdmin) {
+      console.log('当前用户是相册管理员，有管理权限')
+      return true
+    }
+  }
+  
+  console.log('当前用户无管理权限')
+  return false
 })
 
 const filteredDrawings = computed(() => {
@@ -617,14 +641,17 @@ const fetchAlbumDetail = async () => {
   try {
     const res = await getAlbumDetail({ id: Number(albumId.value) })
     if (res.code === 0 && res.data) {
+      albumDetail.value = res.data // 存储完整的相册详情数据
       albumTitle.value = res.data.title || res.data.name || '相册详情'
     } else {
       // 如果API调用失败，设置默认标题
       albumTitle.value = '相册详情'
+      albumDetail.value = null
     }
   } catch (error) {
     console.error('获取相册详情失败:', error)
     albumTitle.value = '相册详情'
+    albumDetail.value = null
   }
 }
 

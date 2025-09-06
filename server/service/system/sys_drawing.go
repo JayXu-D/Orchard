@@ -186,8 +186,8 @@ func (drawingService *DrawingService) GetMyDrawings(req request.GetMyDrawings) (
 	db := global.GVA_DB.Model(&system.SysDrawing{}).
 		Joins("LEFT JOIN sys_albums ON sys_drawings.album_id = sys_albums.id").
 		Joins("LEFT JOIN sys_album_admin ON sys_albums.id = sys_album_admin.album_id").
-		Where("sys_drawings.creator_uuid = ? OR sys_album_admin.user_id = ? OR JSON_CONTAINS(sys_drawings.allowed_members, ?)",
-			req.UserUUID, req.UserID, fmt.Sprintf("\"%s\"", req.UserUUID))
+		Where("sys_drawings.creator_uuid = ? OR JSON_CONTAINS(sys_drawings.allowed_members, ?)",
+			req.UserUUID, fmt.Sprintf("\"%s\"", req.UserUUID))
 
 	// 添加搜索条件
 	if req.Keyword != "" {
