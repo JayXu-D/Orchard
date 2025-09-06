@@ -209,7 +209,7 @@
     </div>
 
     <!-- 图片预览对话框 -->
-    <!-- <ImagePreviewDialog :visible="showImagePreview" :image-url="previewImageUrl" @close="showImagePreview = false" /> -->
+   <ImagePreviewDialog :visible="showImagePreview" :image-url="previewImageUrl" @close="showImagePreview = false" />
   </div>
 </template>
 
@@ -218,7 +218,7 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { useUserStore } from '@/pinia/modules/user'
 import { ElMessage } from 'element-plus'
 import AppSidebar from '@/components/AppSidebar.vue'
-// import ImagePreviewDialog from '@/components/ImagePreviewDialog.vue'
+import ImagePreviewDialog from '@/view/albumDetail/components/ImagePreviewDialog.vue'
 import { getMyDrawings, downloadDrawing as downloadDrawingApi, batchDownloadDrawings, recordDownload, getDownloadStatus } from '@/api/album'
 import { getBaseUrl } from '@/utils/format'
 

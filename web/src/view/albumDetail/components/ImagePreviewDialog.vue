@@ -2,7 +2,7 @@
   <el-dialog
     :model-value="visible"
     @update:model-value="handleVisibleChange"
-    title="图片预览"
+    title="海报图"
     width="800px"
     :before-close="handleClose"
     class="image-preview-dialog"
@@ -11,23 +11,10 @@
       <img 
         :src="imageUrl" 
         :alt="'图片预览'"
-        class="max-w-full max-h-[500px] object-contain rounded-lg shadow-lg"
+        class="max-w-full max-h-[650px] object-contain rounded-lg shadow-lg"
         @error="handleImageError"
       />
     </div>
-    
-    <template #footer>
-      <div class="flex justify-end space-x-3">
-        <el-button @click="handleClose">关闭</el-button>
-        <el-button 
-          type="primary" 
-          @click="downloadImage"
-          :loading="downloading"
-        >
-          下载图片
-        </el-button>
-      </div>
-    </template>
   </el-dialog>
 </template>
 
@@ -64,37 +51,6 @@ const handleVisibleChange = (value) => {
 
 const handleImageError = () => {
   ElMessage.error('图片加载失败')
-}
-
-const downloadImage = async () => {
-  if (!props.imageUrl) {
-    ElMessage.warning('没有可下载的图片')
-    return
-  }
-
-  try {
-    downloading.value = true
-    
-    // 创建一个临时的 a 标签来下载图片
-    const link = document.createElement('a')
-    link.href = props.imageUrl
-    link.download = `image_${Date.now()}.jpg`
-    link.target = '_blank'
-    
-    // 添加到 DOM 中并触发点击
-    document.body.appendChild(link)
-    link.click()
-    
-    // 清理
-    document.body.removeChild(link)
-    
-    ElMessage.success('图片下载成功')
-  } catch (error) {
-    console.error('下载图片失败:', error)
-    ElMessage.error('图片下载失败')
-  } finally {
-    downloading.value = false
-  }
 }
 
 // 监听 visible 变化，重置状态
