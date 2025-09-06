@@ -11,15 +11,18 @@
                     <el-form-item label="用户名">
                         <el-input v-model="searchInfo.username" placeholder="用户名" />
                     </el-form-item>
-                    <el-form-item label="昵称">
+                    <!-- 隐藏昵称搜索 -->
+                    <!-- <el-form-item label="昵称">
                         <el-input v-model="searchInfo.nickname" placeholder="昵称" />
-                    </el-form-item>
-                    <el-form-item label="手机号">
+                    </el-form-item> -->
+                    <!-- 隐藏手机号搜索 -->
+                    <!-- <el-form-item label="手机号">
                         <el-input v-model="searchInfo.phone" placeholder="手机号" />
-                    </el-form-item>
-                    <el-form-item label="邮箱">
+                    </el-form-item> -->
+                    <!-- 隐藏邮箱搜索 -->
+                    <!-- <el-form-item label="邮箱">
                         <el-input v-model="searchInfo.email" placeholder="邮箱" />
-                    </el-form-item>
+                    </el-form-item> -->
                     <el-form-item>
                         <el-button type="primary" icon="search" @click="onSubmit">
                             查询
@@ -47,23 +50,58 @@
                         >
                             确定
                         </button>
-                        <div v-if="quickRegisterMsg" class="text-gray-500 text-sm">{{ quickRegisterMsg }}</div>
+                        <div
+                            v-if="quickRegisterMsg"
+                            class="text-sm"
+                            :style="{ color: quickRegisterMsg.includes('失败') ? '#FF5B5B' : '#A6A6A6' }"
+                        >
+                            {{ quickRegisterMsg }}
+                        </div>
                     </div>
                 </div>
                 <!-- <div class="gva-btn-list">
                     <el-button type="primary" icon="plus" @click="addUser">新增用户</el-button>
                 </div> -->
                 <el-table :data="tableData" row-key="ID">
-                    <el-table-column align="left" label="头像" min-width="75">
+                    <!-- 隐藏头像列 -->
+                    <!-- <el-table-column align="left" label="头像" min-width="75">
                         <template #default="scope">
                             <CustomPic style="margin-top: 8px" :pic-src="scope.row.headerImg" />
                         </template>
+                    </el-table-column> -->
+                    <el-table-column
+                        align="left"
+                        label="注册时间"
+                        min-width="160"
+                        prop="createdAt"
+                    >
+                        <template #default="scope">
+                            <span>
+                                {{
+                                    scope.row.CreatedAt
+                                        ? (() => {
+                                            // 例: 2025-08-03T21:43:46.697+08:00
+                                            const d = new Date(scope.row.CreatedAt)
+                                            if (isNaN(d)) return '-'
+                                            const y = d.getFullYear()
+                                            const m = String(d.getMonth() + 1).padStart(2, '0')
+                                            const day = String(d.getDate()).padStart(2, '0')
+                                            const h = String(d.getHours()).padStart(2, '0')
+                                            const min = String(d.getMinutes()).padStart(2, '0')
+                                            return `${y}-${m}-${day} ${h}:${min}`
+                                        })()
+                                        : '-'
+                                }}
+                            </span>
+                        </template>
                     </el-table-column>
-                    <el-table-column align="left" label="ID" min-width="50" prop="ID" />
-                    <el-table-column align="left" label="用户名" min-width="150" prop="userName" />
-                    <el-table-column align="left" label="昵称" min-width="150" prop="nickName" />
-                    <el-table-column align="left" label="手机号" min-width="180" prop="phone" />
-                    <el-table-column align="left" label="邮箱" min-width="180" prop="email" />
+                    <el-table-column align="left" label="账号" min-width="150" prop="userName" />
+                    <!-- 隐藏昵称列 -->
+                    <!-- <el-table-column align="left" label="昵称" min-width="150" prop="nickName" /> -->
+                    <!-- 隐藏手机号列 -->
+                    <!-- <el-table-column align="left" label="手机号" min-width="180" prop="phone" /> -->
+                    <!-- 隐藏邮箱列 -->
+                    <!-- <el-table-column align="left" label="邮箱" min-width="180" prop="email" /> -->
                     <el-table-column align="left" label="用户角色" min-width="200">
                         <template #default="scope">
                             <el-cascader
@@ -248,7 +286,8 @@ const quickRegister = async () => {
             password: '123456',
             nickName: quickUserName.value,
             enable: 1,
-            authorityId: NORMAL_ROLE_ID
+            authorityId: NORMAL_ROLE_ID,
+            authorityIds: [NORMAL_ROLE_ID]
         }
         const res = await register(req)
         if (res.code === 0) {

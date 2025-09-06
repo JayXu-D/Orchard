@@ -1,8 +1,7 @@
 <template>
   <div class="w-20 bg-[#CA898F] flex flex-col items-center py-6 rounded-[10px]">
     <!-- Logo -->
-    <div
-      class="w-12 h-12 flex items-center justify-center mb-8 cursor-pointer transition-colors  rounded-lg"
+    <div class="w-12 h-12 flex items-center justify-center mb-8 cursor-pointer transition-colors  rounded-lg"
       @click="handleMenuClick('home')">
       <img src="@/assets/orchard_logo.png" alt="Orchard Logo" class="w-9 h-9" />
     </div>
@@ -24,16 +23,18 @@
 
     <!-- 底部用户图标 -->
     <div class="relative user-menu-container">
-      <div
-        class="w-12 h-12 bg-transparent rounded-lg flex items-center justify-center cursor-pointer transition-colors"
+      <div class="w-12 h-12 bg-transparent rounded-lg flex items-center justify-center cursor-pointer transition-colors"
         @click="toggleUserMenu">
-        <CustomPic :picSrc="userStore.userInfo.headerImg" :picType="'avatar'" :size="30" />
+        <div class="w-12 h-12 rounded-lg flex items-center justify-center bg-transparent">
+          <img :src="noAvatarPng" :alt="noAvatarPng" class="w-10 h-10" />
+        </div>
       </div>
 
       <!-- 用户下拉菜单 -->
       <div v-if="showUserMenu"
         class="absolute bottom-0 left-full ml-2 w-32 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
-        <div v-if="userStore.userInfo.authorityId === 888" class="px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 cursor-pointer"
+        <div v-if="userStore.userInfo.authorityId === 888"
+          class="px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 cursor-pointer"
           @click="handleUserMenuClick('member')">
           成员管理
         </div>
@@ -51,6 +52,7 @@
 </template>
 
 <script setup>
+import noAvatarPng from '@/assets/noBody.png'
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/pinia/modules/user'
@@ -158,10 +160,10 @@ const LoginOut = async () => {
   const currentRoute = router.currentRoute.value
   if (currentRoute.query.redirect) {
     const { redirect, ...queryWithoutRedirect } = currentRoute.query
-    router.replace({ 
-      name: currentRoute.name, 
-      params: currentRoute.params, 
-      query: queryWithoutRedirect 
+    router.replace({
+      name: currentRoute.name,
+      params: currentRoute.params,
+      query: queryWithoutRedirect
     })
   }
 

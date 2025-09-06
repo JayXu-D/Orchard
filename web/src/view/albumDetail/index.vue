@@ -10,13 +10,14 @@
         <!-- 相册标题 -->
         <div class="flex items-center justify-between mb-8">
           <h1 style="color: #CA898F; font-weight: 400; font-size: 24px;">{{ albumTitle }}</h1>
-
-          <!-- 筛选和搜索 -->
+        </div>
+        <!-- 筛选和搜索 -->
+        <div class="flex items-center justify-between mb-8">
           <div class="flex items-center space-x-4">
             <!-- 筛选下拉框 -->
-            <div class="relative">
+            <div class="relative ">
               <select v-model="filterStatus"
-                class="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                class="px-4 py-2 border border-[#CA898F] rounded-lg focus:outline-none">
                 <option value="all">全部图纸</option>
                 <option value="downloaded">已下载</option>
                 <option value="notDownloaded">未下载</option>
@@ -28,7 +29,7 @@
             <!-- 搜索框 -->
             <div class="relative">
               <input v-model="searchKeyword" type="text" placeholder="搜索图纸名称或序号"
-                class="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 w-64" />
+                class="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none w-64" />
               <svg class="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" fill="none"
                 stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -38,23 +39,25 @@
 
             <!-- 批量下载按钮 -->
             <button @click="batchDownload" :disabled="selectedDrawings.length === 0"
-              class="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed">
+              class="px-4 py-2 bg-[#CA898F] text-white rounded-lg hover:bg-[#CA898FDE] transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed">
               下载选中图纸
+            </button>
+          </div>
+
+
+          <!-- 操作按钮 -->
+          <div v-if="canManage" class="flex justify-end space-x-3 mb-6">
+            <button @click="showAddPermissionDialog = true"
+            class="px-4 py-2 bg-white text-[#CA898F] border border-[#CA898F] rounded-lg hover:bg-[#CA898F] hover:text-white transition-colors">
+              添加权限
+            </button>
+            <button @click="showUploadDialog = true" :disabled="isUploading"
+              class="px-4 py-2 bg-white text-[#CA898F] border border-[#CA898F] rounded-lg hover:bg-[#CA898F] hover:text-white transition-colors">
+              {{ isUploading ? '上传中...' : '上传新图纸' }}
             </button>
           </div>
         </div>
 
-        <!-- 操作按钮 -->
-        <div v-if="canManage" class="flex justify-end space-x-3 mb-6">
-          <button @click="showAddPermissionDialog = true"
-            class="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors">
-            添加权限
-          </button>
-          <button @click="showUploadDialog = true" :disabled="isUploading"
-            class="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors disabled:bg-gray-200 disabled:cursor-not-allowed">
-            {{ isUploading ? '上传中...' : '上传新图纸' }}
-          </button>
-        </div>
 
         <!-- 图纸表格 -->
         <div class="bg-white rounded-lg shadow overflow-hidden">
@@ -63,17 +66,15 @@
             <div class="text-lg mb-2">暂无图纸数据</div>
             <div class="text-sm">请检查筛选条件或联系管理员添加图纸</div>
           </div>
-          
+
           <!-- 有数据时显示表格 -->
           <table v-else class="min-w-full divide-y divide-gray-200">
             <thead class="bg-gray-50">
               <tr>
                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   <div class="flex items-center space-x-2">
-                    <input type="checkbox" 
-                      :checked="isAllSelected" 
-                      @change="toggleSelectAll"
-                      class="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 focus:ring-2 cursor-pointer appearance-auto" 
+                    <input type="checkbox" :checked="isAllSelected" @change="toggleSelectAll"
+                      class="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 focus:ring-2 cursor-pointer appearance-auto"
                       style="-webkit-appearance: auto; -moz-appearance: auto; appearance: auto;" />
                     <span class="text-xs text-gray-500">全选</span>
                   </div>
@@ -90,10 +91,9 @@
             <tbody class="bg-white divide-y divide-gray-200">
               <tr v-for="drawing in filteredDrawings" :key="drawing.id" class="hover:bg-gray-50">
                 <td class="px-6 py-4 whitespace-nowrap">
-                  <input type="checkbox" 
-                    :checked="selectedDrawings.includes(drawing.id)"
+                  <input type="checkbox" :checked="selectedDrawings.includes(drawing.id)"
                     @change="toggleDrawingSelection(drawing.id)"
-                    class="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 focus:ring-2 cursor-pointer appearance-auto" 
+                    class="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 focus:ring-2 cursor-pointer appearance-auto"
                     style="-webkit-appearance: auto; -moz-appearance: auto; appearance: auto;" />
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ drawing.serialNumber }}</td>
@@ -106,12 +106,12 @@
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap">
                   <button @click="downloadDrawing(drawing)" :disabled="!drawing.canDownload"
-                    class="px-3 py-1 text-sm rounded transition-colors"
+                    class="px-4 py-3 text-sm rounded transition-colors"
                     :class="!drawing.canDownload
                       ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
                       : (drawing.downloaded
                         ? 'bg-[#9BC879] text-white hover:bg-[#8BBF67]'
-                        : 'bg-red-500 text-white hover:bg-red-600')">
+                        : 'bg-[#CA898F] text-white hover:bg-[#CA898FDE]')">
                     {{ !drawing.canDownload ? '暂无权限' : (drawing.downloaded ? '重新下载' : '下载图纸') }}
                   </button>
                 </td>
@@ -268,7 +268,7 @@ const batchDownload = async () => {
   try {
     console.log('批量下载:', selectedDrawings.value)
     console.log('相册ID:', albumId.value)
-    
+
     // 调用批量下载接口
     const result = await batchDownloadDrawings({
       drawingIds: selectedDrawings.value,
@@ -276,7 +276,7 @@ const batchDownload = async () => {
       addWatermark: true, // 默认添加水印
       watermarkText: '批量下载图纸'
     })
-    
+
     if (result.code === 0) {
       ElMessage.success(`成功下载 ${selectedDrawings.value.length} 个图纸`)
       // 异步记录下载点击（不阻塞）
@@ -285,7 +285,7 @@ const batchDownload = async () => {
       } catch (e) {
         console.warn('批量记录下载失败', e)
       }
-      
+
       // 标记所有选中的图纸为已下载
       selectedDrawings.value.forEach(drawingId => {
         const drawing = drawings.value.find(d => d.id === drawingId)
@@ -293,31 +293,31 @@ const batchDownload = async () => {
           drawing.downloaded = true
         }
       })
-      
+
       // 清空选择
       selectedDrawings.value = []
-      
+
       // 如果返回了文件路径列表，触发浏览器下载
       if (result.data && result.data.filePaths && result.data.filePaths.length > 0) {
         // 为每个文件创建下载链接
         result.data.filePaths.forEach((filePath, index) => {
           // 使用完整的API路径进行下载
           const downloadUrl = filePath.startsWith('/') ? filePath : `/api/v1/drawing/${filePath}`
-          
+
           // 创建下载链接
           const link = document.createElement('a')
           link.href = downloadUrl
           link.download = filePath.split('/').pop() // 获取文件名
           link.style.display = 'none'
           document.body.appendChild(link)
-          
+
           // 延迟下载，避免浏览器阻止多个下载
           setTimeout(() => {
             link.click()
             document.body.removeChild(link)
           }, index * 100)
         })
-        
+
         ElMessage.success(`批量下载成功，共 ${result.data.filePaths.length} 个文件`)
       }
     } else {
@@ -331,11 +331,11 @@ const batchDownload = async () => {
 
 const downloadDrawing = async (drawing) => {
   if (!drawing.canDownload) return
-  
+
   try {
     console.log('下载图纸:', drawing.id)
     console.log('相册ID:', albumId.value)
-    
+
     // 先记录下载点击
     try {
       await recordDownload({ drawingId: drawing.id, albumId: Number(albumId.value) })
@@ -350,33 +350,33 @@ const downloadDrawing = async (drawing) => {
       addWatermark: true, // 默认添加水印
       watermarkText: `author: ${drawing.creator?.uuid || ''}`
     })
-    
+
     if (result.code === 0) {
       // 标记为已下载
       drawing.downloaded = true
       ElMessage.success('图纸下载成功')
-      
+
       // 如果返回了文件路径列表，触发浏览器下载
       if (result.data && result.data.filePaths && result.data.filePaths.length > 0) {
         // 为每个文件创建下载链接
         result.data.filePaths.forEach((filePath, index) => {
           // 使用完整的API路径进行下载
           const downloadUrl = filePath.startsWith('/') ? filePath : `/api/v1/drawing/${filePath}`
-          
+
           // 创建下载链接
           const link = document.createElement('a')
           link.href = downloadUrl
           link.download = filePath.split('/').pop() // 获取文件名
           link.style.display = 'none'
           document.body.appendChild(link)
-          
+
           // 延迟下载，避免浏览器阻止多个下载
           setTimeout(() => {
             link.click()
             document.body.removeChild(link)
           }, index * 100)
         })
-        
+
         ElMessage.success(`图纸下载成功，共 ${result.data.filePaths.length} 个文件`)
       }
     } else {
@@ -721,7 +721,7 @@ onMounted(() => {
   } else {
     console.warn('组件挂载时没有相册ID')
   }
-  
+
   // 添加一些测试数据用于调试
   console.log('组件挂载完成，当前状态:')
   console.log('- albumId:', albumId.value)
