@@ -82,6 +82,7 @@ func (i *initCasbin) InitializeData(ctx context.Context) (context.Context, error
 		{Ptype: "p", V0: "888", V1: "/user/getUserList", V2: "POST"},
 		{Ptype: "p", V0: "888", V1: "/user/getUserDetail/:id", V2: "GET"},
 		{Ptype: "p", V0: "888", V1: "/user/getUserDrawings/:id", V2: "GET"},
+		{Ptype: "p", V0: "888", V1: "/user/getAdminUsers", V2: "GET"},
 		{Ptype: "p", V0: "888", V1: "/user/deleteUser", V2: "DELETE"},
 		{Ptype: "p", V0: "888", V1: "/user/changePassword", V2: "POST"},
 		{Ptype: "p", V0: "888", V1: "/user/setUserAuthority", V2: "POST"},
@@ -279,6 +280,7 @@ func (i *initCasbin) InitializeData(ctx context.Context) (context.Context, error
 		{Ptype: "p", V0: "8881", V1: "/mustRead/latest", V2: "GET"},
 		{Ptype: "p", V0: "8881", V1: "/drawing/recordDownload", V2: "POST"},
 		{Ptype: "p", V0: "8881", V1: "/drawing/downloadStatus", V2: "POST"},
+		{Ptype: "p", V0: "8881", V1: "/user/getAdminUsers", V2: "GET"},
 
 		// 图纸权限 - 角色8881（普通用户）
 		{Ptype: "p", V0: "8881", V1: "/drawing/create", V2: "POST"},

@@ -76,9 +76,39 @@
           </button>
         </div>
 
-        <!-- 管理员标签列表 -->
-        <div class="flex flex-wrap gap-2">
+        <!-- 预加载的管理员用户 -->
+        <div v-if="preloadedAdmins.length > 0" class="mb-4">
+          <div class="text-sm text-gray-600 mb-2">快速添加管理员：</div>
+          <div class="flex flex-wrap gap-2">
+            <div
+              v-for="admin in preloadedAdmins"
+              :key="admin.id"
+              @click="addAdmin(admin)"
+              class="flex items-center space-x-2 px-3 py-2 bg-blue-50 border border-blue-200 rounded-lg cursor-pointer hover:bg-blue-100 transition-colors"
+            >
+              <div class="flex flex-col">
+                <span class="text-sm font-medium text-blue-700">{{ admin.name }}</span>
+                <span class="text-xs text-blue-500">{{ admin.username }}</span>
+              </div>
+              <svg class="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+              </svg>
+            </div>
+          </div>
+          <div v-if="preloadedAdmins.length >= 10" class="text-xs text-gray-500 mt-2">
+            显示前10个管理员，更多用户请使用搜索功能
+          </div>
+        </div>
+
+        <!-- 已添加的管理员 -->
+        <div class="mb-4">
+          <div class="text-sm text-gray-600 mb-2">已添加的管理员：</div>
+          <div class="flex flex-wrap gap-2">
+          <div v-if="adminUsers.length === 0" class="text-sm text-gray-400 py-2">
+            暂未添加管理员
+          </div>
           <div 
+            v-else
             v-for="admin in adminUsers" 
             :key="admin.id"
             class="flex items-center space-x-2 px-3 py-1 bg-gray-100 rounded-lg"
@@ -95,6 +125,7 @@
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
               </svg>
             </button>
+          </div>
           </div>
         </div>
       </div>
@@ -171,9 +202,9 @@
 </template>
 
 <script setup>
-import { ref, defineProps, defineEmits, onUnmounted } from 'vue'
+import { ref, watch, defineProps, defineEmits, onUnmounted } from 'vue'
 import { ElMessage } from 'element-plus'
-import { getUserList } from '@/api/user'
+import { getUserList, getAdminUsers } from '@/api/user'
 
 const props = defineProps({
   visible: {
@@ -195,6 +226,19 @@ const searchLoading = ref(false)
 const searchTimeout = ref(null)
 const showAddAdminDialog = ref(false)
 const fileInput = ref(null)
+const preloadedAdmins = ref([]) // 预加载的管理员用户
+const loadingPreloadedAdmins = ref(false)
+
+// 监听对话框显示状态
+watch(
+  () => props.visible,
+  (visible) => {
+    if (visible) {
+      // 对话框打开时预加载管理员用户
+      loadPreloadedAdmins()
+    }
+  }
+)
 
 // 处理封面点击
 const handleCoverClick = () => {
@@ -211,6 +255,33 @@ const handleFileChange = (event) => {
       coverImage.value = e.target.result
     }
     reader.readAsDataURL(file)
+  }
+}
+
+// 预加载管理员用户
+const loadPreloadedAdmins = async () => {
+  try {
+    loadingPreloadedAdmins.value = true
+    const response = await getAdminUsers()
+    
+    if (response.code === 0 && response.data) {
+      // 过滤掉已经在管理员列表中的用户，最多显示10个
+      preloadedAdmins.value = response.data
+        .filter(user => !adminUsers.value.find(admin => admin.id === user.ID))
+        .slice(0, 10)
+        .map(user => ({
+          id: user.ID,
+          uuid: user.uuid,
+          name: user.nickName || user.username || `用户${user.ID}`,
+          username: user.username,
+          authorityId: user.authorityId
+        }))
+    }
+  } catch (error) {
+    console.error('预加载管理员用户失败:', error)
+    ElMessage.error('预加载管理员用户失败')
+  } finally {
+    loadingPreloadedAdmins.value = false
   }
 }
 
@@ -268,6 +339,9 @@ const addAdmin = (admin) => {
       name: admin.name,
       addedTime: new Date().toISOString()
     })
+    
+    // 从预加载列表中移除已添加的用户
+    preloadedAdmins.value = preloadedAdmins.value.filter(a => a.id !== admin.id)
   }
   showAddAdminDialog.value = false
   adminSearchKeyword.value = ''
@@ -279,6 +353,8 @@ const removeAdmin = (adminId) => {
   const index = adminUsers.value.findIndex(admin => admin.id === adminId)
   if (index > -1) {
     adminUsers.value.splice(index, 1)
+    // 重新加载预加载列表，因为可能有新的管理员可以显示
+    loadPreloadedAdmins()
   }
 }
 
@@ -318,6 +394,7 @@ const resetForm = () => {
   adminSearchKeyword.value = ''
   filteredAdmins.value = []
   showAddAdminDialog.value = false
+  preloadedAdmins.value = []
   if (fileInput.value) {
     fileInput.value.value = ''
   }

@@ -26,5 +26,6 @@ func (s *UserRouter) InitUserRouter(Router *gin.RouterGroup) {
 		userRouterWithoutRecord.GET("getUserInfo", baseApi.GetUserInfo)             // 获取自身信息
 		userRouterWithoutRecord.GET("getUserDetail/:id", baseApi.GetUserDetail)     // 获取用户详情
 		userRouterWithoutRecord.GET("getUserDrawings/:id", baseApi.GetUserDrawings) // 获取用户图纸列表
+		userRouterWithoutRecord.GET("getAdminUsers", baseApi.GetAdminUsers)         // 获取超级管理员和管理员用户列表
 	}
 }

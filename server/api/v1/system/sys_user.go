@@ -546,3 +546,22 @@ func (b *BaseApi) GetUserDrawings(c *gin.Context) {
 
 	response.OkWithDetailed(drawings, "获取成功", c)
 }
+
+// GetAdminUsers
+// @Tags      SysUser
+// @Summary   获取所有超级管理员和管理员用户
+// @Security  ApiKeyAuth
+// @accept    application/json
+// @Produce   application/json
+// @Success   200  {object}  response.Response{data=[]system.SysUser,msg=string}  "获取超级管理员和管理员用户列表"
+// @Router    /user/getAdminUsers [get]
+func (b *BaseApi) GetAdminUsers(c *gin.Context) {
+	// 超级管理员角色ID: 888, 管理员角色ID: 8881
+	adminUsers, err := userService.GetUsersByAuthorityIds([]uint{888, 8881})
+	if err != nil {
+		global.GVA_LOG.Error("获取管理员用户列表失败!", zap.Error(err))
+		response.FailWithMessage("获取管理员用户列表失败", c)
+		return
+	}
+	response.OkWithDetailed(adminUsers, "获取成功", c)
+}

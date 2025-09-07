@@ -209,3 +209,17 @@ export const getUserDrawings = (id) => {
     method: 'get'
   })
 }
+
+// @Tags SysUser
+// @Summary 获取所有超级管理员和管理员用户
+// @Security ApiKeyAuth
+// @accept application/json
+// @Produce application/json
+// @Success 200 {string} json "{"success":true,"data":{},"msg":"获取成功"}"
+// @Router /user/getAdminUsers [get]
+export const getAdminUsers = () => {
+  return service({
+    url: `/user/getAdminUsers`,
+    method: 'get'
+  })
+}

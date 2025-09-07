@@ -38,7 +38,7 @@ func (drawingApi *DrawingApi) CreateDrawing(c *gin.Context) {
 	drawing, err := drawingService.CreateDrawing(drawingReq)
 	if err != nil {
 		global.GVA_LOG.Error("创建图纸失败!", zap.Error(err))
-		response.FailWithMessage("创建图纸失败", c)
+		response.FailWithMessage("创建图纸失败："+err.Error(), c)
 		return
 	}
 
@@ -66,7 +66,7 @@ func (drawingApi *DrawingApi) UpdateDrawing(c *gin.Context) {
 	err = drawingService.UpdateDrawing(drawingReq)
 	if err != nil {
 		global.GVA_LOG.Error("更新图纸失败!", zap.Error(err))
-		response.FailWithMessage("更新图纸失败", c)
+		response.FailWithMessage("更新图纸失败:"+err.Error(), c)
 		return
 	}
 

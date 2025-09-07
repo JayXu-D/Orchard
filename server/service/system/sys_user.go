@@ -316,3 +316,12 @@ func (userService *UserService) ResetPassword(ID uint, password string) (err err
 	err = global.GVA_DB.Model(&system.SysUser{}).Where("id = ?", ID).Update("password", utils.BcryptHash(password)).Error
 	return err
 }
+
+// @function: GetUsersByAuthorityIds
+// @description: 根据角色ID列表获取用户列表
+// @param: authorityIds []uint
+// @return: users []system.SysUser, err error
+func (userService *UserService) GetUsersByAuthorityIds(authorityIds []uint) (users []system.SysUser, err error) {
+	err = global.GVA_DB.Where("authority_id IN ?", authorityIds).Find(&users).Error
+	return users, err
+}

@@ -528,7 +528,6 @@ const handleUploadDrawing = async (drawingData) => {
         ElMessage.success('图纸上传成功')
       } else {
         console.error('图纸创建失败:', createRes.msg || '未知错误')
-        ElMessage.error('图纸创建失败: ' + (createRes.msg || '未知错误'))
       }
     } else {
       console.error('文件上传失败，无法创建图纸')
