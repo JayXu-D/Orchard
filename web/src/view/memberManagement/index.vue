@@ -4,59 +4,68 @@
         <AppSidebar :active-menu="activeMenu" @menu-change="handleMenuChange" />
 
         <!-- 主内容区域 -->
-        <div class="flex-1 ml-3 bg-white rounded-[10px] overflow-hidden">
-            <div class="h-full p-6">
-            <div class="gva-search-box">
-                <el-form ref="searchForm" :inline="true" :model="searchInfo">
-                    <el-form-item label="用户名">
-                        <el-input v-model="searchInfo.username" placeholder="用户名" />
-                    </el-form-item>
-                    <!-- 隐藏昵称搜索 -->
-                    <!-- <el-form-item label="昵称">
-                        <el-input v-model="searchInfo.nickname" placeholder="昵称" />
-                    </el-form-item> -->
-                    <!-- 隐藏手机号搜索 -->
-                    <!-- <el-form-item label="手机号">
-                        <el-input v-model="searchInfo.phone" placeholder="手机号" />
-                    </el-form-item> -->
-                    <!-- 隐藏邮箱搜索 -->
-                    <!-- <el-form-item label="邮箱">
-                        <el-input v-model="searchInfo.email" placeholder="邮箱" />
-                    </el-form-item> -->
-                    <el-form-item>
-                        <el-button type="primary" icon="search" @click="onSubmit">
-                            查询
-                        </el-button>
-                        <el-button icon="refresh" @click="onReset"> 重置 </el-button>
-                    </el-form-item>
-                </el-form>
+        <div class="flex-1 ml-[15px] bg-white rounded-[10px] overflow-hidden">
+            <div class="h-full p-6 py-[30px] px-[48px]">
+            <!-- 页面标题 -->
+            <div class="mb-2">
+                <h1 class="text-2xl" style="color: #CA898F; font-weight: 400;">成员管理</h1>
             </div>
-            <div class="gva-table-box">
-                <!-- 快速注册：仅输入账号 一键创建普通用户 -->
-                <div class="flex flex-col items-start gap-2 mb-4">
-                    <div class="text-sm text-gray-600">新成员注册</div>
-                    <div class="flex items-center gap-4">
-                        <input
-                            v-model="quickUserName"
-                            type="text"
-                            placeholder="输入账号"
-                            class="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 w-80"
-                        />
-                        <button
-                            @click="quickRegister"
-                            :disabled="!quickUserName || isQuickRegistering"
-                            class="px-6 py-2 rounded-md text-white transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
-                            :class="isQuickRegistering ? 'bg-gray-400' : 'bg-[#C08C90] hover:brightness-95'"
-                        >
-                            确定
-                        </button>
-                        <div
-                            v-if="quickRegisterMsg"
-                            class="text-sm"
-                            :style="{ color: quickRegisterMsg.includes('失败') ? '#FF5B5B' : '#A6A6A6' }"
-                        >
-                            {{ quickRegisterMsg }}
+            <div class="gva-table-box mt-[30px]">
+                <!-- 快速注册和搜索框 -->
+                <div class="flex items-start justify-between mb-4">
+                    <!-- 快速注册：仅输入账号 一键创建普通用户 -->
+                    <div class="flex flex-col items-start gap-2">
+                        <div class="text-sm text-gray-600">新成员注册</div>
+                        <div class="flex items-center gap-4">
+                            <input
+                                v-model="quickUserName"
+                                type="text"
+                                placeholder="输入账号"
+                                class="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 w-80"
+                            />
+                            <button
+                                @click="quickRegister"
+                                :disabled="!quickUserName || isQuickRegistering"
+                                class="px-6 py-2 rounded-md text-white transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
+                                :class="isQuickRegistering ? 'bg-gray-400' : 'bg-[#C08C90] hover:brightness-95'"
+                            >
+                                确定
+                            </button>
+                            <div
+                                v-if="quickRegisterMsg"
+                                class="text-sm"
+                                :style="{ color: quickRegisterMsg.includes('失败') ? '#FF5B5B' : '#A6A6A6' }"
+                            >
+                                {{ quickRegisterMsg }}
+                            </div>
                         </div>
+                    </div>
+
+                    <!-- 搜索框 -->
+                    <div class="gva-search-box">
+                        <el-form ref="searchForm" :inline="true" :model="searchInfo">
+                            <el-form-item label="">
+                                <el-input v-model="searchInfo.username" placeholder="搜索账号" />
+                            </el-form-item>
+                            <!-- 隐藏昵称搜索 -->
+                            <!-- <el-form-item label="昵称">
+                                <el-input v-model="searchInfo.nickname" placeholder="昵称" />
+                            </el-form-item> -->
+                            <!-- 隐藏手机号搜索 -->
+                            <!-- <el-form-item label="手机号">
+                                <el-input v-model="searchInfo.phone" placeholder="手机号" />
+                            </el-form-item> -->
+                            <!-- 隐藏邮箱搜索 -->
+                            <!-- <el-form-item label="邮箱">
+                                <el-input v-model="searchInfo.email" placeholder="邮箱" />
+                            </el-form-item> -->
+                            <el-form-item>
+                                <el-button type="primary" icon="search" @click="onSubmit">
+                                    查询
+                                </el-button>
+                                <el-button icon="refresh" @click="onReset"> 重置 </el-button>
+                            </el-form-item>
+                        </el-form>
                     </div>
                 </div>
                 <!-- <div class="gva-btn-list">
@@ -139,7 +148,7 @@
                             <el-button type="primary" link icon="view" @click="viewUserDetail(scope.row)">查看详情</el-button>
                             <el-button type="primary" link icon="delete" v-if="userStore.userInfo.ID !== scope.row.ID"
                                 @click="deleteUserFunc(scope.row)">删除</el-button>
-                            <el-button type="primary" link icon="edit" v-if="userStore.userInfo.ID !== scope.row.ID" @click="openEdit(scope.row)">编辑</el-button>
+                            <!-- <el-button type="primary" link icon="edit" v-if="userStore.userInfo.ID !== scope.row.ID" @click="openEdit(scope.row)">编辑</el-button> -->
                             <el-button type="primary" link icon="magic-stick" v-if="userStore.userInfo.ID !== scope.row.ID"
                                 @click="resetPasswordFunc(scope.row)">重置密码</el-button>
                         </template>
@@ -158,9 +167,9 @@
                     <el-form-item label="用户账号">
                         <el-input v-model="resetPwdInfo.userName" disabled />
                     </el-form-item>
-                    <el-form-item label="用户昵称">
+                    <!-- <el-form-item label="用户昵称">
                         <el-input v-model="resetPwdInfo.nickName" disabled />
-                    </el-form-item>
+                    </el-form-item> -->
                     <el-form-item label="新密码">
                         <div class="flex w-full">
                             <el-input class="flex-1" v-model="resetPwdInfo.password" placeholder="请输入新密码"

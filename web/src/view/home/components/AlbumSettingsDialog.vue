@@ -36,7 +36,7 @@
         <label class="block text-sm font-medium text-gray-700 mb-3">管理员</label>
 
         <div class="flex space-x-2 mb-3">
-          <input v-model="adminSearchKeyword" type="text" placeholder="搜索用户ID或昵称"
+          <input v-model="adminSearchKeyword" type="text" placeholder="搜索账号添加"
             class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             @input="searchAdmins" />
           <button @click="showAddAdminDialog = true" class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors">搜索添加</button>
@@ -84,7 +84,7 @@
           <input 
             v-model="adminSearchKeyword" 
             type="text" 
-            placeholder="搜索用户ID或昵称"
+            placeholder="搜索账号添加"
             class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             @input="searchAdmins"
           />

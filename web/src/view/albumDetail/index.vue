@@ -289,6 +289,18 @@ const toggleDrawingSelection = (drawingId) => {
 const batchDownload = async () => {
   if (selectedDrawings.value.length === 0) return
 
+  // 先检查是否有无权限的图纸
+  const noPermissionDrawings = selectedDrawings.value
+    .map(id => drawings.value.find(d => d.id === id))
+    .filter(d => d && !d.canDownload)
+
+  if (noPermissionDrawings.length > 0) {
+    // 提取无权限图纸的序号
+    const serials = noPermissionDrawings.map(d => d.serialNumber || d.name || d.id).join('、')
+    ElMessage.error(`以下图纸没有下载权限，无法批量下载：${serials}`)
+    return
+  }
+
   try {
     console.log('批量下载:', selectedDrawings.value)
     console.log('相册ID:', albumId.value)

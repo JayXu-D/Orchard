@@ -8,10 +8,11 @@
       <!-- 主要内容 -->
       <div class="flex-1 overflow-auto py-[30px] px-[48px]">
         <!-- 页面标题 -->
-        <div class="flex items-center justify-between mb-8">
+        <div class="mb-2">
           <h1 class="text-2xl" style="color: #CA898F; font-weight: 400;">我的图纸</h1>
-
-          <!-- 筛选和搜索 -->
+        </div>
+        <!-- 筛选和搜索框放在标题下方 -->
+        <div class="flex items-center justify-between mb-8 mt-[30px]">
           <div class="flex items-center space-x-4">
             <!-- 筛选下拉框 -->
             <div class="relative">
@@ -39,7 +40,7 @@
 
             <!-- 批量下载按钮 -->
             <button @click="batchDownload" :disabled="selectedDrawings.length === 0"
-              class="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed">
+              class="px-4 py-2 bg-[#CA898F] text-white rounded-lg hover:bg-[#CA898FDD] transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed">
               下载选中图纸
             </button>
             
@@ -186,7 +187,7 @@
               显示第 {{ (currentPage - 1) * pageSize + 1 }} 到 {{ Math.min(currentPage * pageSize, filteredDrawings.length) }} 条，
               共 {{ filteredDrawings.length }} 条记录
             </div>
-            <div class="flex items-center space-x-2">
+            <!-- <div class="flex items-center space-x-2">
               <button 
                 @click="changePage(currentPage - 1)" 
                 :disabled="currentPage === 1"
@@ -202,7 +203,7 @@
                 class="px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-50 disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed">
                 下一页
               </button>
-            </div>
+            </div> -->
           </div>
         </div>
       </div>
@@ -455,7 +456,7 @@ const refreshData = async () => {
   try {
     const res = await getMyDrawings({
       page: 1,
-      pageSize: 100
+      pageSize: 999
     })
     
     if (res.code === 0 && res.data) {
@@ -513,7 +514,7 @@ const fetchMyDrawings = async () => {
   try {
     const res = await getMyDrawings({
       page: 1,
-      pageSize: 100
+      pageSize: 999
     })
     
     if (res.code === 0 && res.data) {

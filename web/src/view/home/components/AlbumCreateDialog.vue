@@ -64,7 +64,7 @@
           <input 
             v-model="adminSearchKeyword" 
             type="text" 
-            placeholder="搜索用户ID或昵称"
+            placeholder="搜索账号添加"
             class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             @input="searchAdmins"
           />
@@ -135,7 +135,7 @@
           <input 
             v-model="adminSearchKeyword" 
             type="text" 
-            placeholder="搜索用户ID或昵称"
+            placeholder="搜索账号添加"
             class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             @input="searchAdmins"
           />

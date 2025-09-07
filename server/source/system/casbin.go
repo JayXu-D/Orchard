@@ -218,6 +218,9 @@ func (i *initCasbin) InitializeData(ctx context.Context) (context.Context, error
 		{Ptype: "p", V0: "888", V1: "/drawing/list", V2: "POST"},
 		{Ptype: "p", V0: "888", V1: "/drawing/download", V2: "POST"},
 		{Ptype: "p", V0: "888", V1: "/drawing/batchDownload", V2: "POST"},
+		{Ptype: "p", V0: "888", V1: "/drawing/recordDownload", V2: "POST"},
+		{Ptype: "p", V0: "888", V1: "/drawing/downloadStatus", V2: "POST"},
+		
 		{Ptype: "p", V0: "888", V1: "/drawing/my", V2: "POST"},
 
 		{Ptype: "p", V0: "888", V1: "/mustRead/create", V2: "POST"},
@@ -274,7 +277,9 @@ func (i *initCasbin) InitializeData(ctx context.Context) (context.Context, error
 		{Ptype: "p", V0: "8881", V1: "/album/get", V2: "POST"},
 		{Ptype: "p", V0: "8881", V1: "/mustRead/get", V2: "POST"},
 		{Ptype: "p", V0: "8881", V1: "/mustRead/latest", V2: "GET"},
-		
+		{Ptype: "p", V0: "8881", V1: "/drawing/recordDownload", V2: "POST"},
+		{Ptype: "p", V0: "8881", V1: "/drawing/downloadStatus", V2: "POST"},
+
 		// 图纸权限 - 角色8881（普通用户）
 		{Ptype: "p", V0: "8881", V1: "/drawing/create", V2: "POST"},
 		{Ptype: "p", V0: "8881", V1: "/drawing/update", V2: "PUT"},
@@ -345,7 +350,8 @@ func (i *initCasbin) InitializeData(ctx context.Context) (context.Context, error
 		{Ptype: "p", V0: "9528", V1: "/drawing/download", V2: "POST"},
 		{Ptype: "p", V0: "9528", V1: "/drawing/batchDownload", V2: "POST"},
 		{Ptype: "p", V0: "9528", V1: "/drawing/my", V2: "POST"},
-
+		{Ptype: "p", V0: "9528", V1: "/drawing/recordDownload", V2: "POST"},
+		{Ptype: "p", V0: "9528", V1: "/drawing/downloadStatus", V2: "POST"},
 		{Ptype: "p", V0: "9528", V1: "/mustRead/get", V2: "POST"},
 		{Ptype: "p", V0: "9528", V1: "/mustRead/latest", V2: "GET"},
 	}
