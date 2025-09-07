@@ -14,6 +14,7 @@
           <div class="flex items-center justify-between mb-8">
             <h1 class="text-2xl" style="color: #CA898F; font-weight: 400;">所有相册</h1>
             <button 
+              v-if="canCreateAlbum"
               @click="showCreateDialog = true"
               class="px-4 py-2 bg-white text-[#CA898F] border border-[#CA898F] rounded-lg hover:bg-[#CA898F] hover:text-white transition-colors"
             >
@@ -55,7 +56,7 @@
 import AppSidebar from '@/components/AppSidebar.vue'
 import AlbumCard from './components/AlbumCard.vue'
 import AlbumCreateDialog from './components/AlbumCreateDialog.vue'
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useUserStore } from '@/pinia/modules/user'
 import { createAlbum, getAlbumList, updateAlbum, deleteAlbumApi } from '@/api/album'
 import { uploadFile } from '@/api/fileUploadAndDownload'
@@ -79,6 +80,12 @@ const handleMenuChange = (menu) => {
 // 相册数据
 const albums = ref([])
 const userStore = useUserStore()
+
+// 判断用户是否有创建相册的权限（超级管理员888或管理员8881）
+const canCreateAlbum = computed(() => {
+  const userAuthorityId = userStore.userInfo?.authorityId
+  return userAuthorityId === 888 || userAuthorityId === 8881
+})
 
 // 处理创建相册
 const handleCreateAlbum = async (albumData) => {

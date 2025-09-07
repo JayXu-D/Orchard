@@ -1,6 +1,6 @@
 <template>
   <div 
-    class="album-card-root bg-gray-100 rounded-lg border-2 border-[#CA898F] overflow-hidden cursor-pointer hover:shadow-md transition-shadow"
+    class="album-card-root bg-white rounded-lg border-2 border-[#CA898F] overflow-hidden cursor-pointer hover:shadow-md transition-shadow"
     @click="handleCardClick"
   >
     <!-- 相册封面 -->

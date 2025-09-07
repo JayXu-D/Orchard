@@ -165,7 +165,7 @@
   const loginForm = ref(null)
   const picPath = ref('')
   const loginFormData = reactive({
-    username: 'admin',
+    username: '',
     password: '',
     captcha: '',
     captchaId: '',

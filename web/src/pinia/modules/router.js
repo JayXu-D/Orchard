@@ -143,6 +143,15 @@ export const useRouterStore = defineStore('router', () => {
           title: '底层layout'
         },
         children: []
+      },
+      {
+        path: '/',
+        name: 'home',
+        component: 'view/home/index.vue',
+        meta: {
+          title: '首页'
+        },
+        children: []
       }
     ]
     const asyncRouterRes = await asyncMenu()
