@@ -410,7 +410,7 @@ const downloadDrawing = async (drawing) => {
       drawingId: drawing.id,
       albumId: drawing.albumId,
       addWatermark: true,
-      watermarkText: `author: ${drawing.creator?.uuid || ''}`
+      watermarkText: `${drawing.creator?.username || ''}`
     })
     
     if (result.code === 0) {

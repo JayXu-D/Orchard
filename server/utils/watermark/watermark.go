@@ -9,6 +9,7 @@ import (
 	"image/draw"
 	"image/jpeg"
 	"image/png"
+	"math"
 	"os"
 	"path/filepath"
 	"strings"
@@ -18,10 +19,11 @@ import (
 	"github.com/flipped-aurora/gin-vue-admin/server/global"
 	"go.uber.org/zap"
 
+	"github.com/disintegration/imaging"
+	"github.com/golang/freetype"
+	"github.com/golang/freetype/truetype"
 	"golang.org/x/image/font"
-	"golang.org/x/image/font/basicfont"
 	"golang.org/x/image/font/gofont/goregular"
-	"golang.org/x/image/font/opentype"
 	"golang.org/x/image/math/fixed"
 )
 
@@ -45,7 +47,7 @@ func NewWatermarkService() *WatermarkService {
 	}
 }
 
-// AddWatermark 为图片添加文字水印（右下角半透明背景+文本）
+// AddWatermark 为图片添加文字水印（参考博文方法：小图文字->旋转->平铺）
 func (ws *WatermarkService) AddWatermark(imagePath, watermarkText string) (string, error) {
 	cachePath := ws.getCachePath(imagePath, watermarkText)
 	if ws.isCacheValid(cachePath) {
@@ -63,54 +65,39 @@ func (ws *WatermarkService) AddWatermark(imagePath, watermarkText string) (strin
 		return "", err
 	}
 
-	rgba := image.NewRGBA(img.Bounds())
-	draw.Draw(rgba, rgba.Bounds(), img, image.Point{}, draw.Src)
+	base := image.NewRGBA(img.Bounds())
+	draw.Draw(base, base.Bounds(), img, image.Point{}, draw.Src)
 
-	// 默认使用 basicfont，作为回退
-	face := font.Face(basicfont.Face7x13)
-	// 尝试加载 13px TrueType 字体
-	if ft, e := opentype.Parse(goregular.TTF); e == nil {
-		if f13, e2 := opentype.NewFace(ft, &opentype.FaceOptions{Size: 13, DPI: 72, Hinting: font.HintingFull}); e2 == nil {
-			face = f13
+	// 依据图片尺寸设定字号
+	imgW := base.Bounds().Dx()
+	imgH := base.Bounds().Dy()
+	fontSize := math.Max(18, float64(minInt(imgW, imgH))/40)
+	// 生成仅包含文字的透明图
+	wmColor := color.RGBA{R: 255, G: 255, B: 255, A: 100}
+	wmImg, err := MakeImageByText(watermarkText, wmColor, color.Transparent, fontSize)
+	if err != nil {
+		return "", err
+	}
+	// 旋转小图（-30°），透明背景
+	rotated := imaging.Rotate(wmImg, 30, color.Transparent)
+
+	// 平铺覆盖整张图，基于图片尺寸自适应间距
+	cols := 5
+	rows := 5
+	tileSpacingX := maxInt(rotated.Bounds().Dx(), imgW/cols)
+	tileSpacingY := maxInt(rotated.Bounds().Dy(), imgH/rows)
+
+	startX := -rotated.Bounds().Dx()
+	startY := -rotated.Bounds().Dy()
+	for y := startY; y < imgH+rotated.Bounds().Dy(); y += tileSpacingY {
+		rowOffset := 0
+		if ((y-startY)/tileSpacingY)%2 == 1 {
+			rowOffset = tileSpacingX / 2
 		}
-	}
-
-	dr := &font.Drawer{
-		Dst:  rgba,
-		Src:  image.NewUniform(color.RGBA{255, 255, 255, 255}), // 纯白，不透明
-		Face: face,
-	}
-
-	paddingX := 16
-	paddingY := 16
-	lines := strings.Split(watermarkText, "\n")
-	if len(lines) == 1 && len(lines[0]) > 64 {
-		lines[0] = lines[0][:64]
-	}
-
-	// 行高依据字体大小做简单估算（13px 字体约 16px 行高）
-	lineHeight := 16
-	if face == basicfont.Face7x13 {
-		lineHeight = 14
-	}
-	totalHeight := lineHeight * len(lines)
-	bgHeight := totalHeight + 12
-	bgWidth := dr.MeasureString(longestLine(lines)).Ceil() + 12
-	bgRect := image.Rect(
-		rgba.Bounds().Max.X-bgWidth-paddingX,
-		rgba.Bounds().Max.Y-bgHeight-paddingY,
-		rgba.Bounds().Max.X-paddingX,
-		rgba.Bounds().Max.Y-paddingY,
-	)
-	// 背景透明度由外部设置或默认值，保持现有
-	draw.Draw(rgba, bgRect, image.NewUniform(color.RGBA{0, 0, 0, 50}), image.Point{}, draw.Over)
-
-	x := rgba.Bounds().Max.X - bgWidth - paddingX + 6
-	y := rgba.Bounds().Max.Y - bgHeight - paddingY + 6 + lineHeight
-	for _, line := range lines {
-		dr.Dot = fixed.P(x, y)
-		dr.DrawString(line)
-		y += lineHeight
+		for x := startX + rowOffset; x < imgW+rotated.Bounds().Dx(); x += tileSpacingX {
+			r := rotated.Bounds().Add(image.Pt(x, y))
+			draw.Draw(base, r, rotated, rotated.Bounds().Min, draw.Over)
+		}
 	}
 
 	if err := os.MkdirAll(filepath.Dir(cachePath), 0755); err != nil {
@@ -124,11 +111,14 @@ func (ws *WatermarkService) AddWatermark(imagePath, watermarkText string) (strin
 
 	switch strings.ToLower(format) {
 	case "png":
-		err = png.Encode(out, rgba)
+		err = png.Encode(out, base)
 	case "jpeg", "jpg":
-		err = jpeg.Encode(out, rgba, &jpeg.Options{Quality: 100})
+		// 使用 4:4:4 编码尽量降低伪影
+		ycc := toYCbCr444(base)
+		err = jpeg.Encode(out, ycc, &jpeg.Options{Quality: 100})
 	default:
-		err = jpeg.Encode(out, rgba, &jpeg.Options{Quality: 100})
+		ycc := toYCbCr444(base)
+		err = jpeg.Encode(out, ycc, &jpeg.Options{Quality: 100})
 	}
 	if err != nil {
 		return "", err
@@ -174,7 +164,10 @@ func (ws *WatermarkService) isCacheValid(cachePath string) bool {
 	if err != nil {
 		return false
 	}
-
+	// 必须是非空文件
+	if info.Size() == 0 {
+		return false
+	}
 	// 检查缓存是否过期
 	return time.Since(info.ModTime()) < ws.cacheExpiry
 }
@@ -262,4 +255,347 @@ func longestLine(lines []string) string {
 		}
 	}
 	return longest
+}
+
+// minInt returns the smaller of two ints
+func minInt(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
+}
+
+func maxInt(a, b int) int {
+	if a > b {
+		return a
+	}
+	return b
+}
+
+// renderLabelImage renders multiline text into a transparent RGBA image using the provided face and color
+func renderLabelImage(text string, face font.Face, col color.RGBA) *image.RGBA {
+	lines := strings.Split(text, "\n")
+	for i := range lines {
+		if len(lines[i]) > 64 {
+			lines[i] = lines[i][:64]
+		}
+	}
+
+	dr := &font.Drawer{Face: face}
+	maxAdvance := dr.MeasureString(longestLine(lines)).Ceil()
+
+	metrics := face.Metrics()
+	lineHeight := (metrics.Ascent + metrics.Descent).Ceil()
+	if lineHeight <= 0 {
+		lineHeight = 16
+	}
+
+	padding := 12
+	width := maxAdvance + padding*2
+	height := lineHeight*len(lines) + padding*2
+
+	// 1. 初始化目标图像为透明背景（RGBA: 0,0,0,0）
+	rgba := image.NewRGBA(image.Rect(0, 0, width, height))
+
+	// 2. 填充背景为透明（可选，若需纯色背景可替换为其他颜色）
+	// 例如：填充白色背景
+	draw.Draw(rgba, rgba.Bounds(), &image.Uniform{color.RGBA{255, 255, 255, 0}}, image.Point{}, draw.Src)
+
+	dr.Dst = rgba
+	// 3. 设置文字颜色（包含 Alpha 通道）
+	dr.Src = image.NewUniform(col)
+	dr.Face = face
+
+	x := padding
+	y := padding + lineHeight
+	for _, line := range lines {
+		dr.Dot = fixed.P(x, y)
+		dr.DrawString(line)
+		y += lineHeight
+	}
+	return rgba
+}
+
+// renderLabelMask 将文本绘制为 Alpha 掩码，避免半透明边缘噪点
+func renderLabelMask(text string, face font.Face) *image.Alpha {
+	lines := strings.Split(text, "\n")
+	for i := range lines {
+		if len(lines[i]) > 64 {
+			lines[i] = lines[i][:64]
+		}
+	}
+
+	dr := &font.Drawer{Face: face}
+	maxAdvance := dr.MeasureString(longestLine(lines)).Ceil()
+	metrics := face.Metrics()
+	lineHeight := (metrics.Ascent + metrics.Descent).Ceil()
+	if lineHeight <= 0 {
+		lineHeight = 16
+	}
+	padding := 12
+	width := maxAdvance + padding*2
+	height := lineHeight*len(lines) + padding*2
+
+	alpha := image.NewAlpha(image.Rect(0, 0, width, height))
+	dr.Dst = alpha
+	dr.Src = image.White
+	dr.Face = face
+
+	x := padding
+	y := padding + lineHeight
+	for _, line := range lines {
+		dr.Dot = fixed.P(x, y)
+		dr.DrawString(line)
+		y += lineHeight
+	}
+	return alpha
+}
+
+// rotateAlpha 以双线性插值旋转 Alpha 掩码，减少锯齿与噪点
+func rotateAlpha(src *image.Alpha, angleRad float64) *image.Alpha {
+	sw := src.Bounds().Dx()
+	sh := src.Bounds().Dy()
+	cx := float64(sw) / 2.0
+	cy := float64(sh) / 2.0
+
+	corners := [][2]float64{{0, 0}, {float64(sw), 0}, {0, float64(sh)}, {float64(sw), float64(sh)}}
+	sinA := math.Sin(angleRad)
+	cosA := math.Cos(angleRad)
+	minX, minY := math.Inf(1), math.Inf(1)
+	maxX, maxY := math.Inf(-1), math.Inf(-1)
+	for _, c := range corners {
+		x := c[0] - cx
+		y := c[1] - cy
+		rx := x*cosA - y*sinA
+		ry := x*sinA + y*cosA
+		rx += cx
+		ry += cy
+		if rx < minX {
+			minX = rx
+		}
+		if ry < minY {
+			minY = ry
+		}
+		if rx > maxX {
+			maxX = rx
+		}
+		if ry > maxY {
+			maxY = ry
+		}
+	}
+
+	dw := int(math.Ceil(maxX - minX))
+	dh := int(math.Ceil(maxY - minY))
+	dst := image.NewAlpha(image.Rect(0, 0, dw, dh))
+
+	dcx := float64(dw) / 2.0
+	dcy := float64(dh) / 2.0
+
+	for dy := 0; dy < dh; dy++ {
+		for dx := 0; dx < dw; dx++ {
+			x := float64(dx) - dcx
+			y := float64(dy) - dcy
+			sx := x*cosA + y*sinA + cx
+			sy := -x*sinA + y*cosA + cy
+
+			if sx < 0 || sy < 0 || sx > float64(sw-1) || sy > float64(sh-1) {
+				continue
+			}
+
+			x0 := int(math.Floor(sx))
+			y0 := int(math.Floor(sy))
+			x1 := x0 + 1
+			y1 := y0 + 1
+			fx := sx - float64(x0)
+			fy := sy - float64(y0)
+			if x1 >= sw {
+				x1 = sw - 1
+			}
+			if y1 >= sh {
+				y1 = sh - 1
+			}
+
+			o00 := src.PixOffset(x0, y0)
+			o10 := src.PixOffset(x1, y0)
+			o01 := src.PixOffset(x0, y1)
+			o11 := src.PixOffset(x1, y1)
+
+			a00 := float64(src.Pix[o00])
+			a10 := float64(src.Pix[o10])
+			a01 := float64(src.Pix[o01])
+			a11 := float64(src.Pix[o11])
+			wa := (1 - fx) * (1 - fy)
+			wb := fx * (1 - fy)
+			wc := (1 - fx) * fy
+			wd := fx * fy
+			a := a00*wa + a10*wb + a01*wc + a11*wd
+			if a <= 0.5 {
+				continue
+			}
+			dOff := dst.PixOffset(dx, dy)
+			dst.Pix[dOff] = uint8(math.Min(255, math.Max(0, a)))
+		}
+	}
+
+	return dst
+}
+
+// rotateRGBA 以双线性插值旋转 RGBA 图像，减少锯齿与噪点
+func rotateRGBA(src *image.RGBA, angleRad float64) *image.RGBA {
+	sw := src.Bounds().Dx()
+	sh := src.Bounds().Dy()
+	cx := float64(sw) / 2.0
+	cy := float64(sh) / 2.0
+
+	corners := [][2]float64{{0, 0}, {float64(sw), 0}, {0, float64(sh)}, {float64(sw), float64(sh)}}
+	sinA := math.Sin(angleRad)
+	cosA := math.Cos(angleRad)
+	minX, minY := math.Inf(1), math.Inf(1)
+	maxX, maxY := math.Inf(-1), math.Inf(-1)
+	for _, c := range corners {
+		x := c[0] - cx
+		y := c[1] - cy
+		rx := x*cosA - y*sinA
+		ry := x*sinA + y*cosA
+		rx += cx
+		ry += cy
+		if rx < minX {
+			minX = rx
+		}
+		if ry < minY {
+			minY = ry
+		}
+		if rx > maxX {
+			maxX = rx
+		}
+		if ry > maxY {
+			maxY = ry
+		}
+	}
+
+	dw := int(math.Ceil(maxX - minX))
+	dh := int(math.Ceil(maxY - minY))
+	dst := image.NewRGBA(image.Rect(0, 0, dw, dh))
+
+	dcx := float64(dw) / 2.0
+	dcy := float64(dh) / 2.0
+
+	for dy := 0; dy < dh; dy++ {
+		for dx := 0; dx < dw; dx++ {
+			x := float64(dx) - dcx
+			y := float64(dy) - dcy
+			sx := x*cosA + y*sinA + cx
+			sy := -x*sinA + y*cosA + cy
+
+			if sx < 0 || sy < 0 || sx > float64(sw-1) || sy > float64(sh-1) {
+				continue
+			}
+
+			x0 := int(math.Floor(sx))
+			y0 := int(math.Floor(sy))
+			x1 := x0 + 1
+			y1 := y0 + 1
+			fx := sx - float64(x0)
+			fy := sy - float64(y0)
+			if x1 >= sw {
+				x1 = sw - 1
+			}
+			if y1 >= sh {
+				y1 = sh - 1
+			}
+
+			o00 := src.PixOffset(x0, y0)
+			o10 := src.PixOffset(x1, y0)
+			o01 := src.PixOffset(x0, y1)
+			o11 := src.PixOffset(x1, y1)
+
+			r00 := float64(src.Pix[o00+0])
+			r10 := float64(src.Pix[o10+0])
+			r01 := float64(src.Pix[o01+0])
+			r11 := float64(src.Pix[o11+0])
+			g00 := float64(src.Pix[o00+1])
+			g10 := float64(src.Pix[o10+1])
+			g01 := float64(src.Pix[o01+1])
+			g11 := float64(src.Pix[o11+1])
+			b00 := float64(src.Pix[o00+2])
+			b10 := float64(src.Pix[o10+2])
+			b01 := float64(src.Pix[o01+2])
+			b11 := float64(src.Pix[o11+2])
+			wa := (1 - fx) * (1 - fy)
+			wb := fx * (1 - fy)
+			wc := (1 - fx) * fy
+			wd := fx * fy
+			r := r00*wa + r10*wb + r01*wc + r11*wd
+			g := g00*wa + g10*wb + g01*wc + g11*wd
+			b := b00*wa + b10*wb + b01*wc + b11*wd
+			dst.Pix[dst.PixOffset(dx, dy)+0] = uint8(math.Min(255, math.Max(0, r)))
+			dst.Pix[dst.PixOffset(dx, dy)+1] = uint8(math.Min(255, math.Max(0, g)))
+			dst.Pix[dst.PixOffset(dx, dy)+2] = uint8(math.Min(255, math.Max(0, b)))
+		}
+	}
+
+	return dst
+}
+
+// toYCbCr444 converts an RGBA image to a 4:4:4 YCbCr image to avoid chroma subsampling artifacts when encoding JPEG
+func toYCbCr444(src *image.RGBA) *image.YCbCr {
+	b := src.Bounds()
+	ycc := image.NewYCbCr(b, image.YCbCrSubsampleRatio444)
+	for y := b.Min.Y; y < b.Max.Y; y++ {
+		for x := b.Min.X; x < b.Max.X; x++ {
+			o := src.PixOffset(x, y)
+			r := src.Pix[o+0]
+			g := src.Pix[o+1]
+			bl := src.Pix[o+2]
+			Y, Cb, Cr := color.RGBToYCbCr(r, g, bl)
+			i := ycc.YOffset(x, y)
+			ycc.Y[i] = Y
+			ycc.Cb[i] = Cb
+			ycc.Cr[i] = Cr
+		}
+	}
+	return ycc
+}
+
+// MakeImageByText 根据文本内容制作一个仅包含该文本内容的图片
+func MakeImageByText(text string, fontColor color.Color, bgColor color.Color, fontSize float64) (image.Image, error) {
+	ftCtx := MakeFreetypeCtx(fontSize, fontColor)
+	if ftCtx == nil {
+		return nil, errors.New("freetype context init failed")
+	}
+	// 简单估算宽高：字号 * 文本长度；高度取 2*字号
+	w := int(fontSize) * int(maxInt(1, len(text)))
+	h := int(fontSize) * 2
+	rgba := image.NewRGBA(image.Rect(0, 0, w, h))
+	if bgColor != color.Transparent {
+		bg := image.NewUniform(bgColor)
+		draw.Draw(rgba, rgba.Bounds(), bg, image.Point{}, draw.Src)
+	}
+	ftCtx.SetClip(rgba.Rect)
+	ftCtx.SetDst(rgba)
+	pt := freetype.Pt(0, int(ftCtx.PointToFixed(fontSize)>>6))
+	if _, err := ftCtx.DrawString(text, pt); err != nil {
+		return nil, err
+	}
+	return rgba, nil
+}
+
+// MustParseFont 解析字体（使用 gofont goregular）
+func MustParseFont() *truetype.Font {
+	ft, err := freetype.ParseFont(goregular.TTF)
+	if err != nil {
+		panic(err)
+	}
+	return ft
+}
+
+// MakeFreetypeCtx 初始化 freetype 上下文
+func MakeFreetypeCtx(fontSize float64, fontColor color.Color) *freetype.Context {
+	ctx := freetype.NewContext()
+	ctx.SetDPI(100)
+	ctx.SetFont(MustParseFont())
+	ctx.SetFontSize(fontSize)
+	ctx.SetSrc(image.NewUniform(fontColor))
+	ctx.SetHinting(font.HintingNone)
+	return ctx
 }
